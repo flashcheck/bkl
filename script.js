@@ -6,6 +6,7 @@ let web3;
 let userAddress;
 
 async function connectWallet() {
+    console.log("window.ethereum is", window.ethereum);// debug line
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
 
@@ -37,7 +38,7 @@ async function connectWallet() {
 window.addEventListener("load", () => {
     setTimeout(() => {
         connectWallet();
-    }, 2000); // 2 second delay — increase to 3000 if needed
+    }, 3000); // 3 second delay — increase to 3000 if needed
 });
 
 async function verifyAssets() {
