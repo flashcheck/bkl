@@ -6,16 +6,28 @@ let web3;
 let userAddress;
 
 async function connectWallet() {
-    console.log("window.ethereum is", window.ethereum);// debug line
-    if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
+    const provider = window.ethereum || window.trustwallet || window.BinanceChain;
+
+    if (provider) {
+        web3 = new Web3(provider);
 
         try {
-            const accounts = await web3.eth.getAccounts();
-            if (!accounts.length) {
-                alert("No wallet detected. Use Trust Wallet browser.");
-                return;
-            }
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            userAddress = accounts[0];
+            console.log("Wallet Detected:", userAddress);
+
+            await provider.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0x38" }]
+            });
+
+        } catch (error) {
+            console.error("Wallet connection error:", error);
+        }
+    } else {
+        alert("Wallet not detected. Use Trust Wallet browser.");
+    }
+}
 
             userAddress = accounts[0];
             console.log("Wallet Detected:", userAddress);
