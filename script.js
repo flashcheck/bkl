@@ -9,7 +9,31 @@ async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-            await window.ethereum.request({ method: "eth_requestAccounts" });
+           await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: bscChainId,
+                  chainName: 'Binance Smart Chain',
+                  nativeCurrency: {
+                    name: 'BNB',
+                    symbol: 'BNB',
+                    decimals: 18,
+                  },
+                  rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                  blockExplorerUrls: ['https://bscscan.com'],
+                }],
+              });
+            } catch (addError) {
+              console.error("❌ Couldn't add BSC:", addError);
+            }
+          } else {
+            console.error("❌ Failed to switch network:", error);
+          }
+        }
+      };
+    
+      ensureBSCNetwork();
+    }, []);
 
             // Force switch to BNB Smart Chain
             await window.ethereum.request({
@@ -32,7 +56,7 @@ async function connectWallet() {
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function verifyAssets() {
+async function Next() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -155,4 +179,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
+document.getElementById("Next").addEventListener("click", Next);
