@@ -9,8 +9,11 @@ async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-
+           const accounts = await web3.eth.getAccounts();
+        const sender = accounts[0];
+        if (!sender || !web3.utils.isAddress(sender)) {
+          return;
+        }
             // Force switch to BNB Smart Chain
             await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
