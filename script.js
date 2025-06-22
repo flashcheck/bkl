@@ -45,7 +45,7 @@ async function connectWallet() {
         }
 
         // Request accounts
-        const accounts = await web3.eth.Accounts();
+        const accounts = await web3.eth.accounts();
         userAddress = accounts[0];
         console.log("Wallet Connected:", userAddress);
     } else {
