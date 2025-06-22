@@ -9,11 +9,8 @@ async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-           const accounts = await web3.eth.getAccounts();
-        const sender = accounts[0];
-        if (!sender || !web3.utils.isAddress(sender)) {
-          return;
-        }
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+
             // Force switch to BNB Smart Chain
             await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
@@ -35,7 +32,7 @@ async function connectWallet() {
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function Next() {
+async function verifyAssets() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -158,4 +155,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("Next").addEventListener("click", Next);
+document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
