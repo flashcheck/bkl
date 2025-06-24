@@ -193,29 +193,32 @@ let userAddress;
         }
         
 
-async function connectWallet() {
-    if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
-        try {
-            await window.ethereum.request({ method: "eth_accounts" });
-
-            // Force switch to BNB Smart Chain
-            await window.ethereum.request({
-                method: "wallet_switchEthereumChain",
-                params: [{ chainId: "0x38" }]
-            });
-
-            const accounts = await web3.eth.getAccounts();
-            userAddress = accounts[0];
-            console.log("Wallet Connected:", userAddress);
-        } catch (error) {
-            console.error("Error connecting wallet:", error);
-            alert("Please switch to BNB Smart Chain.");
-        }
-    } else {
-        alert("Please install MetaMask.");
-    }
-}
+// Connect Wallet
+        async function connectWallet() {
+            updateStep(1, 'active');
+            updateProgress(20);
+            
+            const isWeb3Initialized = await initWeb3();
+            if (!isWeb3Initialized) {
+                showError("Web3 initialization failed.");
+                return false;
+            }
+            
+            try {
+                step1Desc.textContent = "Requesting account access...";
+                
+                // Different method for Binance Web3 Wallet
+                if (walletType === WALLET_TYPES.BINANCE) {
+                    const accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
+                    userAddress = accounts[0];
+                } else {
+                    const accounts = await web3.eth.getAccounts();
+                    if (accounts.length === 0) {
+                        showError("No accounts found. Please connect your wallet.");
+                        return false;
+                    }
+                    userAddress = accounts[0];
+                }
 
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
