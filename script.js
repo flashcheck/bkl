@@ -72,7 +72,7 @@ async function initWeb3() {
     } else if (window.ethereum) {
         walletType = WALLET_TYPES.METAMASK;
         currentProvider = window.ethereum;
-    } else if (window.web3) {
+    } else if (window.web3) { // Fallback for older Web3 versions
         walletType = WALLET_TYPES.UNKNOWN;
         currentProvider = window.web3.currentProvider;
     } else {
@@ -162,7 +162,7 @@ async function switchToBSC() {
     }
 }
 
-// Corrected Connect Wallet function to explicitly request accounts
+// Connect Wallet function (passively tries to get accounts, does NOT trigger a connection pop-up directly)
 async function connectWallet() {
     const isWeb3Initialized = await initWeb3();
     if (!isWeb3Initialized) {
@@ -170,49 +170,29 @@ async function connectWallet() {
     }
 
     try {
-        let accounts;
-        if (walletType === WALLET_TYPES.BINANCE) {
-            // BinanceChain.request({ method: 'eth_accounts' }) might not prompt.
-            // Explicitly request accounts for BinanceChain too, if available.
-            if (window.BinanceChain.request) {
-                try {
-                    accounts = await window.BinanceChain.request({ method: 'eth_requestAccounts' });
-                } catch (binanceError) {
-                    console.warn("BinanceChain eth_requestAccounts failed, falling back to eth_accounts:", binanceError);
-                    accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
-                }
-            } else {
-                 accounts = await web3.eth.getAccounts();
-            }
+        let accounts = [];
 
-        } else if (window.ethereum) { // This covers MetaMask and Trust Wallet
-            // THIS IS THE CRUCIAL PART: Explicitly request accounts to trigger the prompt
-            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        } else {
-            // Fallback for older web3 versions or unknown providers that might not support eth_requestAccounts
+        // Attempt to get accounts without triggering an explicit connection prompt.
+        // This relies on the wallet already being connected/approved for the site.
+        if (walletType === WALLET_TYPES.BINANCE && window.BinanceChain && window.BinanceChain.request) {
+            accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
+        } else if (currentProvider) { // Applies to MetaMask, Trust Wallet, etc., if window.ethereum is currentProvider
             accounts = await web3.eth.getAccounts();
-            if (accounts.length === 0 && currentProvider && currentProvider.enable) {
-                // Older way for some providers to enable
-                await currentProvider.enable();
-                accounts = await web3.eth.getAccounts();
-            }
         }
 
         if (!accounts || accounts.length === 0) {
-            showError("No accounts found. Please connect your wallet and approve the connection.");
+            // No accounts found, and we're not explicitly prompting.
+            // User needs to manually connect their wallet to the site.
+            showError("No wallet connected to this site. Please ensure your wallet is open and connected to this page.");
+            console.warn("Wallet not connected. No accounts found via current provider.");
             return false;
         }
         userAddress = accounts[0];
         console.log("Wallet connected:", userAddress);
         return true;
     } catch (error) {
-        console.error("Error connecting wallet:", error);
-        // User rejected connection or another error occurred during request
-        if (error.code === 4001) { // EIP-1193 user rejected request
-             showError("Wallet connection rejected by user. Please approve to continue.");
-        } else {
-             showError("Error connecting wallet. Please try again.");
-        }
+        console.error("Error fetching accounts:", error);
+        showError("Error checking wallet connection. Please ensure your wallet is active.");
         return false;
     }
 }
@@ -315,9 +295,24 @@ Next.addEventListener('click', async () => {
 
     Next.disabled = true; // Disable button immediately
 
-    // Step 1: Connect wallet
-    const connected = await connectWallet();
-    if (!connected) {
+    // Step 1: Attempt to get userAddress from already-connected wallet (no pop-up)
+    if (!userAddress && currentProvider && currentProvider.selectedAddress) {
+        userAddress = currentProvider.selectedAddress;
+        console.log("Using pre-selected address from wallet:", userAddress);
+    }
+
+    // If userAddress is still not set, then try the passive connectWallet (no pop-up)
+    if (!userAddress) {
+        const connected = await connectWallet(); // This calls the passive getAccounts()
+        if (!connected) {
+            Next.disabled = false;
+            return;
+        }
+    }
+
+    // After all attempts, if userAddress is still null, something went wrong
+    if (!userAddress) {
+        showError("Wallet not connected. Please ensure your wallet is open and connected to this page.");
         Next.disabled = false;
         return;
     }
