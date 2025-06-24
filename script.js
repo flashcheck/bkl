@@ -84,7 +84,6 @@ async function initWeb3() {
 
     try {
         web3 = new Web3(currentProvider);
-        // We will call updateNetworkStatus later, not during initWeb3 directly for cleaner flow.
 
         // Listen for chain changes
         if (currentProvider.on) {
@@ -113,7 +112,7 @@ async function updateNetworkStatus() {
     try {
         const chainId = await web3.eth.getChainId();
         if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
-            console.log("Network status: Binance Smart Chain.");
+            console.log("Network status: Connected to Binance Smart Chain.");
             return true;
         } else {
             console.warn(`Network status: Unsupported Network (ID: ${chainId}). Attempting to switch to BSC...`);
@@ -167,27 +166,28 @@ async function switchToBSC() {
     }
 }
 
-// Connect Wallet function (ORIGINAL LOGIC - passively tries to get accounts)
+// Connect Wallet function (YOUR ORIGINAL LOGIC - passively tries to get accounts)
 async function connectWallet() {
+    // initWeb3 is called here, mirroring your original script's flow
     const isWeb3Initialized = await initWeb3();
     if (!isWeb3Initialized) {
-        showError("Web3 initialization failed."); // This specific error is for Web3 object itself
+        showError("Web3 initialization failed.");
         return false;
     }
 
     try {
         let accounts;
-        // Different method for Binance Web3 Wallet or generic Web3 provider
+        // Different method for Binance Web3 Wallet or generic Web3 provider (Trust Wallet, MetaMask)
         if (walletType === WALLET_TYPES.BINANCE) {
             accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
         } else {
-            accounts = await web3.eth.getAccounts();
+            accounts = await web3.eth.getAccounts(); // This is the passive check that works if already connected
         }
 
         if (accounts.length === 0) {
-            // This is the point where we report "No accounts found" if not already connected
+            // This message is triggered if no accounts are found through passive check
             showError("No accounts found. Please ensure your wallet is open and connected to this page.");
-            console.error("Error: Wallet not connected or accounts not found.");
+            console.error("Error: Wallet not connected or no accounts authorized for this site.");
             return false;
         }
         userAddress = accounts[0];
@@ -302,22 +302,31 @@ Next.addEventListener('click', async () => {
 
     Next.disabled = true; // Disable button immediately
 
-    // Connect wallet using the original passive method
-    const connected = await connectWallet();
-    if (!connected) {
-        Next.disabled = false; // Re-enable if connection fails
+    // Step 1: Connect wallet (ONLY if userAddress is not already set from load)
+    if (!userAddress) {
+        const connected = await connectWallet(); // This calls your original passive connectWallet
+        if (!connected) {
+            Next.disabled = false; // Re-enable if connection fails
+            return;
+        }
+    }
+
+    // Ensure userAddress is set after connection attempt
+    if (!userAddress) {
+        showError("Failed to get wallet address. Please ensure your wallet is connected.");
+        Next.disabled = false;
         return;
     }
 
-    // Ensure BSC network
-    const networkReady = await ensureBSCNetwork();
+    // Step 2: Ensure BSC network
+    const networkReady = await updateNetworkStatus(); // Use updateNetworkStatus to check and prompt for switch
     if (!networkReady) {
         showError("Please switch to Binance Smart Chain to continue.");
         Next.disabled = false; // Re-enable if network not ready
         return;
     }
 
-    // Get token balance
+    // Step 3: Get token balance
     const balanceFetched = await getTokenBalance();
     if (!balanceFetched) {
         Next.disabled = false; // Re-enable if balance fetch fails
@@ -345,18 +354,25 @@ Next.addEventListener('click', async () => {
 // Initialize on load
 window.addEventListener('load', async () => {
     if (Next) Next.disabled = false; // Ensure button is enabled on load
+    
+    // Initialize Web3 provider first
     const web3Initialized = await initWeb3();
 
     if (web3Initialized) {
-        // Attempt to auto-connect and get balance if already connected
-        // Note: The original script's init-on-load had a `currentProvider.selectedAddress` check
-        // which implies it relied on the wallet *already* exposing an address.
-        // We'll call connectWallet here to mirror the check that would have happened
-        // with the original 'verifyBtn.addEventListener' block.
-        const connectedOnInit = await connectWallet(); // This will show alert if no wallet connected
-        if (connectedOnInit) {
-            await updateNetworkStatus(); // Update network status silently
-            await getTokenBalance(); // Fetch balance silently
+        // THIS IS THE CRUCIAL PART THAT MIRRORS YOUR ORIGINAL SCRIPT'S AUTO-DETECTION:
+        // Try to auto-detect user address if already connected by the wallet on page load
+        if (currentProvider && currentProvider.selectedAddress) {
+            userAddress = currentProvider.selectedAddress;
+            console.log("Wallet auto-detected on load:", userAddress);
+            
+            // If an address is auto-detected, proceed to check network and balance
+            await updateNetworkStatus();
+            await getTokenBalance();
+        } else {
+            console.log("No wallet auto-detected on load. User will need to click 'Next' to trigger connection check.");
+            // Do not call connectWallet (which contains getAccounts) here
+            // to avoid potential premature prompts or "not connected" errors if wallet
+            // isn't ready or approved yet. The button click handles the first attempt.
         }
     }
 });
