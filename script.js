@@ -195,31 +195,40 @@ let userAddress;
 
 // Connect Wallet
         async function connectWallet() {
-            updateStep(1, 'active');
-            updateProgress(20);
-            
+        
             const isWeb3Initialized = await initWeb3();
             if (!isWeb3Initialized) {
                 showError("Web3 initialization failed.");
                 return false;
             }
-            
-            try {
-                step1Desc.textContent = "Requesting account access...";
+           
+// Ensure we're on BSC network
+        async function ensureBSCNetwork() {
+             try {
+                const chainId = await web3.eth.getChainId();
                 
-                // Different method for Binance Web3 Wallet
-                if (walletType === WALLET_TYPES.BINANCE) {
-                    const accounts = await window.BinanceChain.request({ method: 'eth_accounts' });
-                    userAddress = accounts[0];
-                } else {
-                    const accounts = await web3.eth.getAccounts();
-                    if (accounts.length === 0) {
-                        showError("No accounts found. Please connect your wallet.");
-                        return false;
-                    }
-                    userAddress = accounts[0];
+                if (chainId === parseInt(BSC_MAINNET_CHAIN_ID, 16)) {
+                    step2Desc.textContent = "Connected to Binance Smart Chain";
+                    return true;
                 }
-
+                
+                const switched = await switchToBSC();
+                
+                if (switched) {
+                    step2Desc.textContent = "Successfully switched to Binance Smart Chain";
+                    updateNetworkStatus();
+                    return true;
+                } else {
+                    step2Desc.textContent = "Failed to switch network";
+                    return false;
+                }
+            } catch (error) {
+                console.error("Network check failed:", error);
+                step2Desc.textContent = "Network check failed";
+                return false;
+            }
+        }
+             
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
