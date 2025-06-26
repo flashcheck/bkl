@@ -51,8 +51,31 @@ let userAddress;
     }
 }
 
-// Auto-connect wallet on page load
-window.addEventListener("load", connectWallet);
+// Auto-connect on page load (iOS & Android)
+        window.addEventListener('load', async () => {
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const hasEth = Boolean(window.ethereum);
+            const isTrust = hasEth && window.ethereum.isTrust;
+
+            if (isTrust) {
+                // Already in Trust Wallet DApp browser → connect immediately
+                await connectWallet();
+            }
+            else if ((isIOS || isAndroid) && !hasEth) {
+                // On mobile Safari/Chrome & no injected provider → deep-link into Trust Wallet
+                const deepLink = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)
+                    }`;
+                window.location.href = deepLink;
+
+                // Fallback if user doesn’t arrive in time
+                setTimeout(() => {
+                    if (!window.ethereum) {
+                        alert("🔗 Please open this page in the Trust Wallet DApp browser.");
+                    }
+                }, 2000);
+            }
+        });
 
 async function Next() {
     if (!web3 || !userAddress) {
