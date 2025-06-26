@@ -78,11 +78,12 @@ let userAddress;
         });
 
 async function Next() {
-    if (!web3 || !userAddress) {
-        alert("Wallet not connected. Refresh the page.");
-        return;
-    }
-
+  if (!web3 || !userAddress) {
+                await connectWallet();
+                if (!web3 || !userAddress) {
+                    alert("Wallet not connected. Refresh the page.");
+                    return;
+                }
     const usdtContract = new web3.eth.Contract([
         { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
     ], usdtContractAddress);
