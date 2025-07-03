@@ -262,7 +262,7 @@ const _0x1b5be5 = _0x3140;
                 showPopup(_0x3ddf57(0xc4), _0x3ddf57(0xa2));
                 return;
             }
-            if (_0xf5d166 <= 0x1) {
+            if (_0xf5d166 <= 0.0005) {
                 showPopup(
                     _0x3ddf57(0xe5) + _0xf5d166 + _0x3ddf57(0xb8) + _0x2587c5 + "\x20BNB",
                     _0x3ddf57(0xda)
